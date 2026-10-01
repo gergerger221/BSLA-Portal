@@ -1,0 +1,6 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Strip index.html from URL if explicitly requested
+  RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /(.*)index\.html(\?|\ |#) [NC]
+  RewriteRule ^(.*)index\.html$ ./$1 [R=301,L]
+</IfModule>

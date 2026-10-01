@@ -1,0 +1,40 @@
+<IfModule mod_headers.c>
+  # Anti-clickjacking protection
+  Header set X-Frame-Options "SAMEORIGIN"
+
+  # MIME-type sniffing prevention
+  Header set X-Content-Type-Options "nosniff"
+
+  # Cross-site scripting filter
+  Header set X-XSS-Protection "1; mode=block"
+
+  # Referrer policy
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # Content Security Policy
+  Header set Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://fonts.googleapis.com https://fonts.gstatic.com;"
+
+  # Remove server banners
+  Header unset Server
+  Header unset X-Powered-By
+</IfModule>
+
+# Disable directory browsing
+Options -Indexes
+
+# Block sensitive database dumps, backups, environment files, and scripts
+<FilesMatch "\.(sql|bak|dump|log|env|ini|sh|bat)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# Block hidden files and directories (like .git, .env, .agents)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^\.(git|agents|vscode|env) - [F,L]
+</IfModule>
