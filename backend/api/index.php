@@ -449,6 +449,11 @@ try {
             (new LmsController())->publishAssignment();
             break;
 
+        case 'system/run-security-audit':
+            require_once __DIR__ . '/../controllers/AuditController.php';
+            (new \App\Controllers\AuditController())->runAudit();
+            break;
+
         default:
             Response::error("Endpoint not found: {$route}", 404);
             break;
