@@ -1624,12 +1624,11 @@
           </div>
 
           <div>
-            <label class="font-semibold text-slate-700 block mb-1">Assignment / Quiz Title *</label>
+            <label class="font-semibold text-slate-700 block mb-1">Assignment / Quiz Title <span class="text-rose-500 font-bold">*</span></label>
             <input 
               v-model="assignmentForm.title" 
               type="text" 
               :placeholder="assignmentForm.submission_format === 'quiz' ? 'e.g. Unit Quiz 1: Chemical Reactions & Stoichiometry' : 'e.g. Problem Set 1: Inverse Functions & Applications'" 
-              required 
               class="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             />
           </div>
@@ -1637,7 +1636,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <div class="flex items-center justify-between mb-1">
-                <label class="font-semibold text-slate-700">Maximum Score *</label>
+                <label class="font-semibold text-slate-700">Maximum Score <span class="text-rose-500 font-bold">*</span></label>
                 <span v-if="assignmentForm.submission_format === 'quiz'" class="text-[10px] text-emerald-700 font-bold">
                   Auto-calculated from items
                 </span>
@@ -1648,29 +1647,26 @@
                 min="1" 
                 max="500" 
                 :readonly="assignmentForm.submission_format === 'quiz'"
-                required 
                 class="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 :class="{'bg-slate-100 text-slate-600': assignmentForm.submission_format === 'quiz'}"
               />
             </div>
             <div>
-              <label class="font-semibold text-slate-700 block mb-1">Due Date & Time *</label>
+              <label class="font-semibold text-slate-700 block mb-1">Due Date & Time <span class="text-rose-500 font-bold">*</span></label>
               <input 
                 v-model="assignmentForm.due_date" 
                 type="datetime-local" 
-                required 
                 class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label class="font-semibold text-slate-700 block mb-1">Instructions / Guide *</label>
+            <label class="font-semibold text-slate-700 block mb-1">Instructions / Guide (Optional for Draft)</label>
             <textarea 
               v-model="assignmentForm.instructions" 
               rows="2" 
               :placeholder="assignmentForm.submission_format === 'quiz' ? 'Provide directions for this quiz, e.g. answer all questions carefully...' : 'Provide detailed instructions, rubric, or submission requirements...'" 
-              required 
               class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             ></textarea>
           </div>
@@ -3019,39 +3015,47 @@ const saveLmsAssignment = async (targetStatus = 'published') => {
     return;
   }
   const [secId, subId] = selectedClassKey.value.split('-').map(Number);
-  if (!assignmentForm.value.title || !assignmentForm.value.due_date || !assignmentForm.value.instructions) {
-    errorMessage.value = 'Please complete all required assignment fields.';
-    return;
-  }
-
-  // Quiz-specific validation
-  if (assignmentForm.value.submission_format === 'quiz') {
-    const questions = assignmentForm.value.quiz_questions || [];
-    if (questions.length === 0 && targetStatus === 'published') {
-      errorMessage.value = 'Please add at least one question to the interactive quiz before publishing.';
+  
+  if (targetStatus === 'published') {
+    if (!assignmentForm.value.title || !assignmentForm.value.due_date) {
+      errorMessage.value = 'Please provide an Assignment Title and Due Date before publishing to students.';
       return;
     }
-    for (let i = 0; i < questions.length; i++) {
-      const q = questions[i];
-      if (!q.question || !q.question.trim()) {
-        errorMessage.value = `Question #${i + 1} is missing a question prompt.`;
+
+    // Strict Quiz-specific validation when publishing
+    if (assignmentForm.value.submission_format === 'quiz') {
+      const questions = assignmentForm.value.quiz_questions || [];
+      if (questions.length === 0) {
+        errorMessage.value = 'Please add at least one question to the interactive quiz before publishing.';
         return;
       }
-      if (q.type === 'multiple_choice') {
-        if (!q.options || q.options.some(opt => !opt || !opt.trim())) {
-          errorMessage.value = `Question #${i + 1} (Multiple Choice) has empty choices.`;
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        if (!q.question || !q.question.trim()) {
+          errorMessage.value = `Question #${i + 1} is missing a question prompt.`;
           return;
         }
-        if (!q.correct_answer || !q.correct_answer.trim()) {
-          errorMessage.value = `Please designate the correct answer key for Question #${i + 1}.`;
-          return;
-        }
-      } else if (q.type === 'identification') {
-        if (!q.correct_answer || !q.correct_answer.trim()) {
-          errorMessage.value = `Please provide the answer key for Question #${i + 1} (Identification).`;
-          return;
+        if (q.type === 'multiple_choice') {
+          if (!q.options || q.options.some(opt => !opt || !opt.trim())) {
+            errorMessage.value = `Question #${i + 1} (Multiple Choice) has empty choices.`;
+            return;
+          }
+          if (!q.correct_answer || !q.correct_answer.trim()) {
+            errorMessage.value = `Please designate the correct answer key for Question #${i + 1}.`;
+            return;
+          }
+        } else if (q.type === 'identification') {
+          if (!q.correct_answer || !q.correct_answer.trim()) {
+            errorMessage.value = `Please provide the answer key for Question #${i + 1} (Identification).`;
+            return;
+          }
         }
       }
+    }
+  } else {
+    // DRAFT MODE: Allow saving even if incomplete! Provide friendly fallback if title is empty
+    if (!assignmentForm.value.title || !assignmentForm.value.title.trim()) {
+      assignmentForm.value.title = 'Untitled Draft Task';
     }
   }
 

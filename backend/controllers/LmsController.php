@@ -514,31 +514,47 @@ class LmsController {
         $targetSections = $input['target_sections'] ?? null;
         $quizQuestions = $input['quiz_questions'] ?? null;
 
-        if (!$sectionId || !$subjectId || !$title || !$dueDate) {
-            Response::error('Section, subject, title, and due date are required.');
+        if (!$sectionId || !$subjectId) {
+            Response::error('Section and subject are required.');
+        }
+
+        if ($status === 'published') {
+            if (!$title || !$dueDate) {
+                Response::error('Assignment Title and Due Date are required to publish to learners.');
+            }
+        } else {
+            // For Draft: provide friendly defaults if left empty by teacher
+            if (empty($title)) {
+                $title = 'Untitled Draft Task';
+            }
+            if (empty($dueDate)) {
+                $dueDate = date('Y-m-d 23:59:59', strtotime('+7 days'));
+            }
         }
 
         $quizJson = null;
         if ($submissionFormat === 'quiz') {
             $decoded = is_string($quizQuestions) ? json_decode($quizQuestions, true) : (is_array($quizQuestions) ? $quizQuestions : []);
-            if (empty($decoded)) {
-                Response::error('Please create at least one question (Multiple Choice, Identification, or Essay) for the interactive quiz.');
+            if ($status === 'published' && empty($decoded)) {
+                Response::error('Please create at least one question (Multiple Choice, Identification, or Essay) before publishing the interactive quiz.');
             }
 
             // Auto-calculate maximum score from question points and normalize question IDs
             $computedMaxScore = 0;
-            foreach ($decoded as $idx => &$q) {
-                if (empty($q['id'])) {
-                    $q['id'] = 'q_' . ($idx + 1) . '_' . bin2hex(random_bytes(3));
+            if (!empty($decoded)) {
+                foreach ($decoded as $idx => &$q) {
+                    if (empty($q['id'])) {
+                        $q['id'] = 'q_' . ($idx + 1) . '_' . bin2hex(random_bytes(3));
+                    }
+                    $pts = max(1, (int)($q['points'] ?? 1));
+                    $q['points'] = $pts;
+                    $computedMaxScore += $pts;
                 }
-                $pts = max(1, (int)($q['points'] ?? 1));
-                $q['points'] = $pts;
-                $computedMaxScore += $pts;
+                unset($q);
             }
-            unset($q);
 
-            $maxScore = $computedMaxScore;
-            $quizJson = json_encode($decoded);
+            $maxScore = $computedMaxScore > 0 ? $computedMaxScore : $maxScore;
+            $quizJson = !empty($decoded) ? json_encode($decoded) : null;
         }
 
         $db = Database::getConnection();
@@ -628,10 +644,31 @@ class LmsController {
         $db = Database::getConnection();
         $this->ensureQuizSchema($db);
 
-        $stmt = $db->prepare("UPDATE lms_assignments SET status = 'published' WHERE id = :id AND teacher_id = :tid");
+        $stmt = $db->prepare("SELECT * FROM lms_assignments WHERE id = :id AND teacher_id = :tid");
         $stmt->execute(['id' => $id, 'tid' => $user['id']]);
+        $asg = $stmt->fetch();
 
-        Response::success('Task officially published to class learners.');
+        if (!$asg) {
+            Response::error('Assignment draft not found or unauthorized.', 404);
+        }
+
+        if (empty($asg['title']) || $asg['title'] === 'Untitled Draft Task') {
+            Response::error('Please provide a specific Title before publishing this draft to students.', 422);
+        }
+        if (empty($asg['due_date'])) {
+            Response::error('Please set a valid Due Date & Time before publishing.', 422);
+        }
+        if ($asg['submission_format'] === 'quiz') {
+            $questions = json_decode($asg['quiz_questions'] ?? '[]', true);
+            if (empty($questions)) {
+                Response::error('Please add at least one question before publishing the interactive quiz.', 422);
+            }
+        }
+
+        $updateStmt = $db->prepare("UPDATE lms_assignments SET status = 'published' WHERE id = :id AND teacher_id = :tid");
+        $updateStmt->execute(['id' => $id, 'tid' => $user['id']]);
+
+        Response::success('Task officially published and released to all class learners.');
     }
 
     /**
