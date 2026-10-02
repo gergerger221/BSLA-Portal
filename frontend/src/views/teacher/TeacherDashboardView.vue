@@ -684,11 +684,25 @@
           <div 
             v-for="asg in lmsClassData.assignments" 
             :key="asg.id"
-            class="p-5 bg-white rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-xs transition space-y-4"
+            class="p-5 bg-white rounded-2xl border transition space-y-4"
+            :class="[
+              asg.status === 'draft' 
+                ? 'border-dashed border-amber-300 bg-amber-50/20 hover:border-amber-400' 
+                : 'border-slate-200 hover:border-emerald-500 hover:shadow-xs'
+            ]"
           >
             <div class="flex flex-col md:flex-row md:items-start justify-between gap-3">
               <div class="space-y-1.5 flex-1">
                 <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                  <!-- Draft Status Badge -->
+                  <span 
+                    v-if="asg.status === 'draft'" 
+                    class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 flex items-center space-x-1"
+                  >
+                    <Clock class="w-3 h-3 text-amber-700" />
+                    <span>Draft • Hidden from Students</span>
+                  </span>
+
                   <span 
                     class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
                     :class="asg.task_type === 'Performance Task' ? 'bg-purple-50 text-purple-800 border border-purple-200' : 'bg-blue-50 text-blue-800 border border-blue-200'"
@@ -715,14 +729,42 @@
                 </div>
 
                 <div class="flex items-center space-x-2">
-                  <button 
-                    @click="openSubmissionsModal(asg)" 
-                    type="button" 
-                    class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-800 hover:bg-emerald-700 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer"
-                  >
-                    <Users class="w-3.5 h-3.5" />
-                    <span>Submissions ({{ asg.total_submissions || 0 }})</span>
-                  </button>
+                  <!-- DRAFT ACTIONS -->
+                  <template v-if="asg.status === 'draft'">
+                    <button 
+                      v-if="!isCurrentClassArchived"
+                      @click="publishDraftAssignment(asg)" 
+                      type="button" 
+                      class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-600 text-white shadow-2xs transition flex items-center space-x-1.5 cursor-pointer"
+                      title="Publish this task now to all enrolled learners"
+                    >
+                      <Send class="w-3.5 h-3.5" />
+                      <span>Publish Now</span>
+                    </button>
+
+                    <button 
+                      v-if="!isCurrentClassArchived"
+                      @click="editDraftAssignment(asg)" 
+                      type="button" 
+                      class="px-3 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 transition flex items-center space-x-1 cursor-pointer"
+                      title="Edit draft task questions and details"
+                    >
+                      <FileText class="w-3.5 h-3.5 text-slate-500" />
+                      <span>Edit</span>
+                    </button>
+                  </template>
+
+                  <!-- PUBLISHED ACTIONS -->
+                  <template v-else>
+                    <button 
+                      @click="openSubmissionsModal(asg)" 
+                      type="button" 
+                      class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-800 hover:bg-emerald-700 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer"
+                    >
+                      <Users class="w-3.5 h-3.5" />
+                      <span>Submissions ({{ asg.total_submissions || 0 }})</span>
+                    </button>
+                  </template>
 
                   <button 
                     v-if="!isCurrentClassArchived"
@@ -1523,7 +1565,9 @@
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <div class="flex items-center space-x-2">
             <FileText class="w-5 h-5 text-emerald-600" />
-            <h3 class="font-bold text-slate-900 text-base">Create Learning Task / Interactive Quiz</h3>
+            <h3 class="font-bold text-slate-900 text-base">
+              {{ assignmentForm.id ? 'Edit Learning Task / Quiz (Draft)' : 'Create Learning Task / Interactive Quiz' }}
+            </h3>
           </div>
           <button @click="showCreateAssignmentModal = false" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
         </div>
@@ -1558,7 +1602,7 @@
           </button>
         </div>
 
-        <form @submit.prevent="saveLmsAssignment()" class="space-y-4 text-xs">
+        <form @submit.prevent="saveLmsAssignment('published')" class="space-y-4 text-xs">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="font-semibold text-slate-700 block mb-1">Target Quarter *</label>
@@ -1646,31 +1690,34 @@
                 <p class="text-[11px] text-slate-500">Configure Multiple Choice, Identification, or Essay items with auto-grading.</p>
               </div>
 
-              <!-- Add Question Buttons -->
-              <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
+              <!-- Add Question Buttons Group -->
+              <div class="flex items-center gap-2 flex-wrap">
                 <button 
                   type="button" 
                   @click="addQuizQuestion('multiple_choice')" 
-                  class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-emerald-800 hover:bg-emerald-700 text-white shadow-2xs transition flex items-center space-x-1 cursor-pointer"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 hover:border-blue-300 shadow-2xs transition flex items-center space-x-1.5 cursor-pointer active:scale-95"
+                  title="Add multiple choice question with auto-grading"
                 >
-                  <Plus class="w-3 h-3" />
-                  <span>+ Multiple Choice</span>
+                  <ListChecks class="w-3.5 h-3.5 text-blue-600" />
+                  <span>Multiple Choice</span>
                 </button>
                 <button 
                   type="button" 
                   @click="addQuizQuestion('identification')" 
-                  class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100 shadow-2xs transition flex items-center space-x-1 cursor-pointer"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 hover:border-emerald-300 shadow-2xs transition flex items-center space-x-1.5 cursor-pointer active:scale-95"
+                  title="Add identification question with text answer key"
                 >
-                  <Plus class="w-3 h-3" />
-                  <span>+ Identification</span>
+                  <Sparkles class="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Identification</span>
                 </button>
                 <button 
                   type="button" 
                   @click="addQuizQuestion('essay')" 
-                  class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-white border border-purple-300 text-purple-800 hover:bg-purple-100 shadow-2xs transition flex items-center space-x-1 cursor-pointer"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 hover:border-purple-300 shadow-2xs transition flex items-center space-x-1.5 cursor-pointer active:scale-95"
+                  title="Add open-ended essay question for manual teacher scoring"
                 >
-                  <Plus class="w-3 h-3" />
-                  <span>+ Essay</span>
+                  <FileText class="w-3.5 h-3.5 text-purple-600" />
+                  <span>Essay</span>
                 </button>
               </div>
             </div>
@@ -1872,22 +1919,39 @@
             </div>
           </div>
 
-          <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-slate-100">
             <button 
               @click="showCreateAssignmentModal = false" 
               type="button" 
-              class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer order-last sm:order-first"
             >
               Cancel
             </button>
-            <button 
-              type="submit" 
-              :disabled="isLoadingLms" 
-              class="px-5 py-2 rounded-xl text-xs font-semibold bg-emerald-800 hover:bg-emerald-700 disabled:opacity-50 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer"
-            >
-              <Check class="w-3.5 h-3.5" />
-              <span>{{ isLoadingLms ? 'Publishing...' : (assignmentForm.submission_format === 'quiz' ? 'Publish Quiz' : 'Publish Task') }}</span>
-            </button>
+
+            <div class="flex items-center space-x-2 justify-end">
+              <!-- Save as Draft Button -->
+              <button 
+                type="button"
+                @click="saveLmsAssignment('draft')"
+                :disabled="isLoadingLms"
+                class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 transition flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                title="Save progress as draft without publishing to learners"
+              >
+                <Clock class="w-3.5 h-3.5 text-slate-500" />
+                <span>Save as Draft</span>
+              </button>
+
+              <!-- Publish Button -->
+              <button 
+                type="button" 
+                @click="saveLmsAssignment('published')"
+                :disabled="isLoadingLms" 
+                class="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-800 hover:bg-emerald-700 disabled:opacity-50 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer"
+              >
+                <Send class="w-3.5 h-3.5" />
+                <span>{{ isLoadingLms ? 'Publishing...' : (assignmentForm.submission_format === 'quiz' ? 'Publish Quiz' : 'Publish Task') }}</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -2671,10 +2735,7 @@ const openUploadModuleModal = () => {
   showUploadModuleModal.value = true;
 };
 
-const openCreateAssignmentModal = () => {
-  resetDistributionTargets();
-  showCreateAssignmentModal.value = true;
-};
+
 
 const announcementForm = ref({
   title: '',
@@ -2878,7 +2939,80 @@ const uploadLmsModule = async () => {
 };
 
 
-const saveLmsAssignment = async () => {
+const openCreateAssignmentModal = () => {
+  resetDistributionTargets();
+  assignmentForm.value = {
+    id: null,
+    quarter: '1st Quarter',
+    title: '',
+    instructions: '',
+    task_type: 'Written Work',
+    submission_format: 'standard',
+    max_score: 50,
+    due_date: '',
+    quiz_questions: []
+  };
+  showCreateAssignmentModal.value = true;
+};
+
+const editDraftAssignment = (asg) => {
+  resetDistributionTargets();
+  let parsedQuestions = [];
+  if (asg.quiz_questions) {
+    try {
+      parsedQuestions = typeof asg.quiz_questions === 'string' ? JSON.parse(asg.quiz_questions) : JSON.parse(JSON.stringify(asg.quiz_questions));
+    } catch (e) {
+      parsedQuestions = [];
+    }
+  }
+
+  // Format due_date for datetime-local input (YYYY-MM-DDTHH:mm)
+  let formattedDueDate = '';
+  if (asg.due_date) {
+    const d = new Date(asg.due_date);
+    if (!isNaN(d.getTime())) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      formattedDueDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+  }
+
+  assignmentForm.value = {
+    id: asg.id,
+    quarter: asg.quarter || '1st Quarter',
+    title: asg.title || '',
+    instructions: asg.instructions || '',
+    task_type: asg.task_type || 'Written Work',
+    submission_format: asg.submission_format || 'standard',
+    max_score: asg.max_score || 50,
+    due_date: formattedDueDate,
+    quiz_questions: parsedQuestions
+  };
+  showCreateAssignmentModal.value = true;
+};
+
+const publishDraftAssignment = async (asg) => {
+  if (isCurrentClassArchived.value) {
+    errorMessage.value = 'Cannot publish: this class belongs to an archived academic semester.';
+    return;
+  }
+  isLoadingLms.value = true;
+  try {
+    const res = await api.publishLmsAssignment({ assignment_id: asg.id });
+    feedbackMessage.value = res.message || 'Draft task has been published and is now visible to students!';
+    await loadLmsContent();
+    setTimeout(() => { feedbackMessage.value = ''; }, 3500);
+  } catch (err) {
+    errorMessage.value = 'Failed to publish draft: ' + err.message;
+  } finally {
+    isLoadingLms.value = false;
+  }
+};
+
+const saveLmsAssignment = async (targetStatus = 'published') => {
   if (!selectedClassKey.value) return;
   if (isCurrentClassArchived.value) {
     errorMessage.value = 'Cannot create assignment: this class belongs to an archived academic semester.';
@@ -2893,8 +3027,8 @@ const saveLmsAssignment = async () => {
   // Quiz-specific validation
   if (assignmentForm.value.submission_format === 'quiz') {
     const questions = assignmentForm.value.quiz_questions || [];
-    if (questions.length === 0) {
-      errorMessage.value = 'Please add at least one question to the interactive quiz.';
+    if (questions.length === 0 && targetStatus === 'published') {
+      errorMessage.value = 'Please add at least one question to the interactive quiz before publishing.';
       return;
     }
     for (let i = 0; i < questions.length; i++) {
@@ -2927,11 +3061,13 @@ const saveLmsAssignment = async () => {
       section_id: secId,
       subject_id: subId,
       ...assignmentForm.value,
+      status: targetStatus,
       target_sections: assignmentTargetKeys.value
     });
-    feedbackMessage.value = res.message || 'Assignment published to class.';
+    feedbackMessage.value = res.message || (targetStatus === 'draft' ? 'Task saved as draft (hidden from learners).' : 'Assignment published to class.');
     showCreateAssignmentModal.value = false;
     assignmentForm.value = { 
+      id: null,
       quarter: '1st Quarter', 
       title: '', 
       instructions: '', 

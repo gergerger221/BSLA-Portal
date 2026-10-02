@@ -445,6 +445,9 @@ try {
         case 'lms/grade-submission':
             (new LmsController())->gradeSubmission();
             break;
+        case 'lms/publish-assignment':
+            (new LmsController())->publishAssignment();
+            break;
 
         default:
             Response::error("Endpoint not found: {$route}", 404);

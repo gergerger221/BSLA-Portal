@@ -201,5 +201,6 @@ export default {
   deleteLmsAssignment: (id) => apiRequest('lms/delete-assignment', { method: 'POST', body: { id } }),
   submitLmsAssignment: (formDataOrData) => apiRequest('lms/submit-assignment', { method: 'POST', body: formDataOrData }),
   getLmsAssignmentSubmissions: (assignmentId) => apiRequest(`lms/assignment-submissions&assignment_id=${assignmentId}`),
-  gradeLmsSubmission: (data) => apiRequest('lms/grade-submission', { method: 'POST', body: data })
+  gradeLmsSubmission: (data) => apiRequest('lms/grade-submission', { method: 'POST', body: data }),
+  publishLmsAssignment: (data) => apiRequest('lms/publish-assignment', { method: 'POST', body: data })
 };

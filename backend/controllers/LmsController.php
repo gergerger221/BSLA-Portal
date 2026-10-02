@@ -104,19 +104,25 @@ class LmsController {
         $modules = $modStmt->fetchAll();
 
         // 3. Fetch Assignments
+        $asgWhere = "WHERE asg.section_id = :sec_id AND asg.subject_id = :sub_id";
+        if ($user['role_slug'] === 'student') {
+            $asgWhere .= " AND (asg.status = 'published' OR asg.status IS NULL)";
+        }
+
         $asgStmt = $db->prepare("
             SELECT asg.*,
                    (SELECT COUNT(*) FROM lms_submissions sub WHERE sub.assignment_id = asg.id) as total_submissions,
                    (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = asg.section_id AND e.status IN ('Officially Enrolled', 'Enrolled')) as total_learners
             FROM lms_assignments asg
-            WHERE asg.section_id = :sec_id AND asg.subject_id = :sub_id
-            ORDER BY asg.due_date DESC
+            $asgWhere
+            ORDER BY (CASE WHEN asg.status = 'draft' THEN 0 ELSE 1 END) ASC, asg.due_date DESC
         ");
         $asgStmt->execute(['sec_id' => $sectionId, 'sub_id' => $subjectId]);
         $assignments = $asgStmt->fetchAll();
 
         // Process quiz questions and security sanitization for students
         foreach ($assignments as &$asg) {
+            $asg['status'] = $asg['status'] ?? 'published';
             $asg['submission_format'] = $asg['submission_format'] ?? 'standard';
             if (!empty($asg['quiz_questions'])) {
                 $parsed = json_decode($asg['quiz_questions'], true);
@@ -498,6 +504,10 @@ class LmsController {
         $title = trim($input['title'] ?? '');
         $instructions = trim($input['instructions'] ?? '');
         $taskType = trim($input['task_type'] ?? 'Written Work');
+        $status = strtolower(trim($input['status'] ?? 'published'));
+        if (!in_array($status, ['draft', 'published'], true)) {
+            $status = 'published';
+        }
         $submissionFormat = trim($input['submission_format'] ?? 'standard');
         $maxScore = (int)($input['max_score'] ?? 50);
         $dueDate = trim($input['due_date'] ?? '');
@@ -539,7 +549,7 @@ class LmsController {
             $stmt = $db->prepare("
                 UPDATE lms_assignments 
                 SET quarter = :quarter, title = :title, instructions = :inst, 
-                    task_type = :ttype, submission_format = :sformat, quiz_questions = :qquestions,
+                    task_type = :ttype, status = :status, submission_format = :sformat, quiz_questions = :qquestions,
                     max_score = :max_score, due_date = :due 
                 WHERE id = :id
             ");
@@ -548,13 +558,15 @@ class LmsController {
                 'title'     => $title,
                 'inst'      => $instructions,
                 'ttype'     => $taskType,
+                'status'    => $status,
                 'sformat'   => $submissionFormat,
                 'qquestions'=> $quizJson,
                 'max_score' => $maxScore,
                 'due'       => $dueDate,
                 'id'        => $id
             ]);
-            Response::success('Assignment updated successfully');
+            $msg = $status === 'draft' ? 'Task saved as draft.' : 'Assignment updated successfully.';
+            Response::success($msg);
         } else {
             $targets = $this->parseTargetSections($targetSections, $sectionId, $subjectId);
             $targets = $this->filterActiveTargets($db, $targets);
@@ -562,8 +574,8 @@ class LmsController {
                 Response::error('Cannot create assignment: all selected class sections belong to an inactive semester.', 403);
             }
             $stmt = $db->prepare("
-                INSERT INTO lms_assignments (section_id, subject_id, teacher_id, quarter, title, instructions, task_type, submission_format, quiz_questions, max_score, due_date, created_at)
-                VALUES (:sec_id, :sub_id, :tid, :quarter, :title, :inst, :ttype, :sformat, :qquestions, :max_score, :due, NOW())
+                INSERT INTO lms_assignments (section_id, subject_id, teacher_id, quarter, title, instructions, task_type, status, submission_format, quiz_questions, max_score, due_date, created_at)
+                VALUES (:sec_id, :sub_id, :tid, :quarter, :title, :inst, :ttype, :status, :sformat, :qquestions, :max_score, :due, NOW())
             ");
             $count = 0;
             $firstId = 0;
@@ -576,6 +588,7 @@ class LmsController {
                     'title'     => $title,
                     'inst'      => $instructions,
                     'ttype'     => $taskType,
+                    'status'    => $status,
                     'sformat'   => $submissionFormat,
                     'qquestions'=> $quizJson,
                     'max_score' => $maxScore,
@@ -586,11 +599,39 @@ class LmsController {
                 }
                 $count++;
             }
-            $msg = $count > 1 
-                ? ($submissionFormat === 'quiz' ? "Interactive quiz published to {$count} class sections." : "Assignment task published to {$count} class sections.")
-                : ($submissionFormat === 'quiz' ? "Interactive online quiz published successfully." : "Assignment published to class.");
-            Response::success($msg, ['id' => $firstId, 'count' => $count]);
+
+            if ($status === 'draft') {
+                $msg = $count > 1 
+                    ? "Task saved as draft across {$count} sections (hidden from learners)." 
+                    : "Task saved as draft (hidden from learners until published).";
+            } else {
+                $msg = $count > 1 
+                    ? ($submissionFormat === 'quiz' ? "Interactive quiz published to {$count} class sections." : "Assignment task published to {$count} class sections.")
+                    : ($submissionFormat === 'quiz' ? "Interactive online quiz published successfully." : "Assignment published to class.");
+            }
+            Response::success($msg, ['id' => $firstId, 'count' => $count, 'status' => $status]);
         }
+    }
+
+    /**
+     * Publish a Draft Assignment Immediately
+     */
+    public function publishAssignment(): void {
+        $user = Auth::requireRole(['teacher'], false);
+        $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+        $id = (int)($input['assignment_id'] ?? 0);
+
+        if (!$id) {
+            Response::error('Assignment ID is required.', 400);
+        }
+
+        $db = Database::getConnection();
+        $this->ensureQuizSchema($db);
+
+        $stmt = $db->prepare("UPDATE lms_assignments SET status = 'published' WHERE id = :id AND teacher_id = :tid");
+        $stmt->execute(['id' => $id, 'tid' => $user['id']]);
+
+        Response::success('Task officially published to class learners.');
     }
 
     /**
@@ -976,6 +1017,10 @@ class LmsController {
             $c4 = $db->query("SHOW COLUMNS FROM lms_submissions LIKE 'auto_graded_score'")->fetch();
             if (!$c4) {
                 $db->exec("ALTER TABLE lms_submissions ADD COLUMN auto_graded_score DECIMAL(5,2) NULL AFTER quiz_answers");
+            }
+            $c5 = $db->query("SHOW COLUMNS FROM lms_assignments LIKE 'status'")->fetch();
+            if (!$c5) {
+                $db->exec("ALTER TABLE lms_assignments ADD COLUMN status ENUM('draft', 'published') NOT NULL DEFAULT 'published' AFTER task_type");
             }
         } catch (\Exception $e) {
             error_log("[LMS-Quiz] Schema ensure error: " . $e->getMessage());
