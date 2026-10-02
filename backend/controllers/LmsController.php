@@ -827,8 +827,8 @@ class LmsController {
                 $teacherFeedback = "Auto-graded online quiz: {$autoGradedScore} / {$assignment['max_score']} pts.";
             } else {
                 $status = $isLate ? 'Late' : 'Submitted';
-                $score = $autoGradedScore; // Partial score for objective items
-                $teacherFeedback = "Objective items auto-graded: {$autoGradedScore} pts. Essay answer(s) submitted for teacher evaluation.";
+                $score = null; // Strictly NULL so score is hidden until teacher evaluates the essay!
+                $teacherFeedback = "Objective items recorded ({$autoGradedScore} pts). Essay answer(s) submitted for teacher manual evaluation.";
             }
 
             $submissionText = "Submitted online interactive quiz ({$assignment['title']})";
@@ -1011,6 +1011,8 @@ class LmsController {
         $submissionId = (int)($input['submission_id'] ?? 0);
         $score = isset($input['score']) ? (float)$input['score'] : null;
         $feedback = trim($input['teacher_feedback'] ?? '');
+        $quizAnswers = $input['quiz_answers'] ?? null;
+        $quizAnswersJson = is_array($quizAnswers) ? json_encode($quizAnswers) : (is_string($quizAnswers) ? $quizAnswers : null);
 
         if (!$submissionId) {
             Response::error('Submission ID is required.');
@@ -1021,6 +1023,7 @@ class LmsController {
             UPDATE lms_submissions 
             SET score = :score,
                 teacher_feedback = :feedback,
+                quiz_answers = COALESCE(:qanswers, quiz_answers),
                 status = 'Graded',
                 graded_at = NOW()
             WHERE id = :id
@@ -1028,10 +1031,11 @@ class LmsController {
         $stmt->execute([
             'score'    => $score,
             'feedback' => $feedback,
+            'qanswers' => $quizAnswersJson,
             'id'       => $submissionId
         ]);
 
-        Response::success('Submission graded successfully');
+        Response::success('Submission graded successfully and score released to student');
     }
 
     /**

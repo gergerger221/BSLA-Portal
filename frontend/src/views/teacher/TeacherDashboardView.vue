@@ -2031,13 +2031,17 @@
                     <button 
                       type="button" 
                       @click="openQuizInspectionModal(activeGradingAssignment, s)"
-                      class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-violet-50 hover:bg-violet-100 text-violet-800 border border-violet-200 shadow-2xs transition flex items-center space-x-1 cursor-pointer"
+                      class="px-2.5 py-1 rounded-xl text-[11px] font-bold shadow-2xs transition flex items-center space-x-1 cursor-pointer"
+                      :class="hasEssayQuestions(s.quiz_answers) && s.submission_status !== 'Graded' ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 ring-2 ring-amber-400/20' : 'bg-violet-50 hover:bg-violet-100 text-violet-800 border border-violet-200'"
                     >
-                      <ListChecks class="w-3 h-3 text-violet-700" />
-                      <span>Review Quiz ({{ s.auto_graded_score !== null ? s.auto_graded_score : '--' }} pts)</span>
+                      <ListChecks class="w-3 h-3" :class="hasEssayQuestions(s.quiz_answers) && s.submission_status !== 'Graded' ? 'text-amber-700' : 'text-violet-700'" />
+                      <span>{{ hasEssayQuestions(s.quiz_answers) ? (s.submission_status === 'Graded' ? 'Review & Edit Scores' : 'Grade Essays & Review') : `Review Quiz (${s.score !== null && s.score !== undefined ? s.score : (s.auto_graded_score ?? '--')} pts)` }}</span>
                     </button>
-                    <div class="text-[10px] text-slate-400">
-                      {{ Object.keys(s.quiz_answers).length }} questions evaluated
+                    <div v-if="hasEssayQuestions(s.quiz_answers) && s.submission_status !== 'Graded'" class="text-[10px] text-amber-700 font-bold flex items-center space-x-1">
+                      <span>⏳ Essays Pending Evaluation</span>
+                    </div>
+                    <div v-else class="text-[10px] text-slate-400">
+                      {{ typeof s.quiz_answers === 'object' ? Object.keys(s.quiz_answers).length : '--' }} questions evaluated
                     </div>
                   </div>
 
@@ -2122,9 +2126,13 @@
                 {{ quizInspectionModal.submission?.last_name }}, {{ quizInspectionModal.submission?.first_name }}
               </h3>
             </div>
-            <p class="text-xs text-slate-500 mt-0.5">
-              {{ quizInspectionModal.assignment?.title }} • Auto-Graded Score: 
-              <strong class="text-emerald-700 font-mono">{{ quizInspectionModal.submission?.auto_graded_score ?? '--' }} / {{ quizInspectionModal.assignment?.max_score }} Pts</strong>
+            <p class="text-xs text-slate-500 mt-1 flex items-center flex-wrap gap-2">
+              <span>{{ quizInspectionModal.assignment?.title }}</span>
+              <span>•</span>
+              <span>Auto-Scored Objectives: <strong class="text-slate-700 font-mono">{{ quizInspectionModal.submission?.auto_graded_score !== null && quizInspectionModal.submission?.auto_graded_score !== undefined ? quizInspectionModal.submission?.auto_graded_score : '--' }} pts</strong></span>
+              <span v-if="hasEssayQuestions(quizInspectionModal.submission?.quiz_answers)" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                📝 Contains Essay Questions
+              </span>
             </p>
           </div>
           <button @click="quizInspectionModal.isOpen = false" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
@@ -2157,7 +2165,7 @@
                 </span>
               </div>
 
-              <!-- Score / Correctness Badge -->
+              <!-- Score / Correctness Badge / Essay Points Evaluator -->
               <div>
                 <span 
                   v-if="ans.type !== 'essay'"
@@ -2166,12 +2174,19 @@
                 >
                   {{ ans.is_correct ? `✓ Correct (+${ans.points_earned} pts)` : `✕ Incorrect (0 / ${ans.points_possible} pts)` }}
                 </span>
-                <span 
-                  v-else 
-                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800"
-                >
-                  Essay (Max {{ ans.points_possible }} pts)
-                </span>
+                <div v-else class="flex items-center space-x-1.5 bg-purple-100 px-2.5 py-1 rounded-xl border border-purple-300">
+                  <span class="text-[10px] text-purple-900 font-bold uppercase tracking-wider">Score Essay:</span>
+                  <input 
+                    v-model.number="ans.points_earned" 
+                    @input="recalcInspectionTotalScore()" 
+                    type="number" 
+                    min="0" 
+                    :max="ans.points_possible" 
+                    step="0.5" 
+                    class="w-16 px-1.5 py-0.5 rounded-lg border border-purple-300 bg-white font-mono font-bold text-center text-xs text-purple-900 focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                  />
+                  <span class="text-[11px] font-bold text-purple-900">/ {{ ans.points_possible }} pts</span>
+                </div>
               </div>
             </div>
 
@@ -2185,6 +2200,11 @@
               </div>
             </div>
 
+            <!-- Rubric Guide if teacher provided one -->
+            <div v-if="ans.type === 'essay' && ans.rubric_guide" class="p-2 rounded-xl bg-purple-50/70 border border-purple-200 text-[11px] text-purple-900 leading-relaxed">
+              <strong class="font-bold">Grading Rubric / Criteria:</strong> {{ ans.rubric_guide }}
+            </div>
+
             <!-- Correct Answer Key Display for Teacher -->
             <div v-if="ans.type !== 'essay'" class="text-[11px] text-emerald-800 font-medium flex items-center space-x-1">
               <span>Correct Key:</span>
@@ -2193,24 +2213,27 @@
           </div>
         </div>
 
-        <!-- Quick Grade Adjust & Close Footer -->
-        <div class="pt-3 border-t border-slate-100 flex items-center justify-between shrink-0">
+        <!-- Quick Grade Adjust & Release Footer -->
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-between shrink-0 flex-wrap gap-2">
           <div class="flex items-center space-x-2">
-            <label class="font-bold text-slate-700 text-xs">Total Score:</label>
-            <input 
-              v-model.number="quizInspectionModal.submission.score" 
-              type="number" 
-              min="0" 
-              :max="quizInspectionModal.assignment?.max_score" 
-              step="0.5" 
-              class="w-20 px-2 py-1 rounded-lg border border-slate-300 font-mono font-bold text-center text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-            />
+            <label class="font-bold text-slate-700 text-xs">Final Grade:</label>
+            <div class="flex items-center space-x-1.5">
+              <input 
+                v-model.number="quizInspectionModal.submission.score" 
+                type="number" 
+                min="0" 
+                :max="quizInspectionModal.assignment?.max_score" 
+                step="0.5" 
+                class="w-20 px-2 py-1 rounded-lg border border-slate-300 font-mono font-bold text-center text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              />
+              <span class="text-xs text-slate-500 font-medium">/ {{ quizInspectionModal.assignment?.max_score }} Pts</span>
+            </div>
             <button 
               type="button" 
               @click="saveGradeForSubmission(quizInspectionModal.submission)" 
-              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-600 text-white shadow-2xs transition cursor-pointer"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-600 text-white shadow-2xs transition cursor-pointer"
             >
-              Save Grade
+              Release & Save Grade
             </button>
           </div>
 
@@ -2765,7 +2788,49 @@ const quizInspectionModal = ref({
   submission: null
 });
 
+const hasEssayQuestions = (answers) => {
+  if (!answers) return false;
+  let ansObj = answers;
+  if (typeof ansObj === 'string') {
+    try { ansObj = JSON.parse(ansObj); } catch(e) { return false; }
+  }
+  return Object.values(ansObj).some(a => a && a.type === 'essay');
+};
+
+const recalcInspectionTotalScore = () => {
+  if (!quizInspectionModal.value.submission || !quizInspectionModal.value.submission.quiz_answers) return;
+  let total = 0;
+  const answers = quizInspectionModal.value.submission.quiz_answers;
+  for (const qid in answers) {
+    const ans = answers[qid];
+    if (ans.points_earned !== null && ans.points_earned !== undefined && ans.points_earned !== '') {
+      total += Math.max(0, parseFloat(ans.points_earned) || 0);
+    }
+  }
+  quizInspectionModal.value.submission.score = Math.round(total * 10) / 10;
+};
+
 const openQuizInspectionModal = (assignment, submission) => {
+  let answers = submission.quiz_answers;
+  if (typeof answers === 'string') {
+    try { answers = JSON.parse(answers); } catch(e) {}
+  }
+  submission.quiz_answers = answers;
+
+  // If score is null or empty, calculate current points from quiz_answers (objective points + any essay points already awarded)
+  if (submission.score === null || submission.score === undefined || submission.score === '') {
+    let currentTotal = 0;
+    if (answers) {
+      for (const qid in answers) {
+        const q = answers[qid];
+        if (q.points_earned !== null && q.points_earned !== undefined && q.points_earned !== '') {
+          currentTotal += parseFloat(q.points_earned) || 0;
+        }
+      }
+    }
+    submission.score = Math.round(currentTotal * 10) / 10;
+  }
+
   quizInspectionModal.value = {
     isOpen: true,
     assignment,
@@ -3197,7 +3262,8 @@ const saveGradeForSubmission = async (student) => {
     const res = await api.gradeLmsSubmission({
       submission_id: student.submission_id,
       score: student.score,
-      teacher_feedback: student.teacher_feedback || ''
+      teacher_feedback: student.teacher_feedback || '',
+      quiz_answers: student.quiz_answers || null
     });
     student.submission_status = 'Graded';
     feedbackMessage.value = res.message || 'Grade recorded successfully.';

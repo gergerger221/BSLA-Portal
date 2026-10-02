@@ -2011,20 +2011,45 @@
             <span>{{ isPastDeadline(activeQuizAssignment.due_date) ? 'Past Deadline: Quiz submission will be recorded as Late.' : `Deadline: ${formatDeadline(activeQuizAssignment.due_date)}` }}</span>
           </div>
 
-          <!-- If Already Graded Banner -->
-          <div v-if="activeQuizAssignment?.my_submission" class="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-emerald-950 flex items-center justify-between">
-            <div class="space-y-0.5">
-              <div class="font-bold text-xs flex items-center space-x-1.5">
-                <CheckCircle2 class="w-4 h-4 text-emerald-600" />
-                <span>Quiz Evaluated: {{ activeQuizAssignment.my_submission.score ?? activeQuizAssignment.my_submission.auto_graded_score }} / {{ activeQuizAssignment.max_score }} Points</span>
+          <!-- Submission Review Banner -->
+          <div v-if="activeQuizAssignment?.my_submission">
+            <!-- 1. Officially Graded -->
+            <div 
+              v-if="activeQuizAssignment.my_submission.status === 'Graded' && activeQuizAssignment.my_submission.score !== null" 
+              class="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-emerald-950 flex items-center justify-between"
+            >
+              <div class="space-y-0.5">
+                <div class="font-bold text-xs flex items-center space-x-1.5">
+                  <CheckCircle2 class="w-4 h-4 text-emerald-600" />
+                  <span>Official Score: {{ activeQuizAssignment.my_submission.score }} / {{ activeQuizAssignment.max_score }} Points</span>
+                </div>
+                <div v-if="activeQuizAssignment.my_submission.teacher_feedback" class="text-[11px] text-emerald-800">
+                  <strong>Teacher Feedback:</strong> {{ activeQuizAssignment.my_submission.teacher_feedback }}
+                </div>
               </div>
-              <div v-if="activeQuizAssignment.my_submission.teacher_feedback" class="text-[11px] text-emerald-800">
-                Feedback: {{ activeQuizAssignment.my_submission.teacher_feedback }}
-              </div>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white border border-emerald-300 text-emerald-800 font-mono">
+                Graded
+              </span>
             </div>
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-white border border-emerald-300 text-emerald-800 font-mono">
-              {{ activeQuizAssignment.my_submission.status }}
-            </span>
+
+            <!-- 2. Pending Teacher Essay Review -->
+            <div 
+              v-else 
+              class="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-300 text-amber-950 flex items-center justify-between"
+            >
+              <div class="space-y-0.5">
+                <div class="font-bold text-xs flex items-center space-x-1.5">
+                  <Clock class="w-4 h-4 text-amber-600" />
+                  <span>Submission Received • Essay Pending Teacher Evaluation</span>
+                </div>
+                <div class="text-[11px] text-amber-800">
+                  Objective answers recorded. Your official score will be released once your teacher evaluates your essay responses.
+                </div>
+              </div>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 border border-amber-300 text-amber-900 font-mono">
+                Under Review
+              </span>
+            </div>
           </div>
         </div>
 
@@ -2037,7 +2062,7 @@
             :class="[
               activeQuizAssignment?.my_submission?.quiz_answers?.[q.id]
                 ? (activeQuizAssignment.my_submission.quiz_answers[q.id].type === 'essay'
-                    ? 'border-purple-200 bg-purple-50/10'
+                    ? (activeQuizAssignment.my_submission.status === 'Graded' && activeQuizAssignment.my_submission.quiz_answers[q.id].points_earned !== null ? 'border-purple-300 bg-purple-50/20' : 'border-amber-300 bg-amber-50/20')
                     : (activeQuizAssignment.my_submission.quiz_answers[q.id].is_correct ? 'border-emerald-300 bg-emerald-50/20' : 'border-rose-300 bg-rose-50/20'))
                 : 'border-slate-200'
             ]"
@@ -2062,13 +2087,18 @@
               <!-- Question Score / Result Tag -->
               <div>
                 <span v-if="activeQuizAssignment?.my_submission?.quiz_answers?.[q.id]" class="font-bold text-[11px]">
-                  <span v-if="activeQuizAssignment.my_submission.quiz_answers[q.id].type === 'essay'" class="text-purple-700">
-                    Essay ({{ q.points }} pts)
-                  </span>
-                  <span v-else-if="activeQuizAssignment.my_submission.quiz_answers[q.id].is_correct" class="text-emerald-700">
+                  <template v-if="activeQuizAssignment.my_submission.quiz_answers[q.id].type === 'essay'">
+                    <span v-if="activeQuizAssignment.my_submission.status === 'Graded' && activeQuizAssignment.my_submission.quiz_answers[q.id].points_earned !== null" class="text-purple-700 font-mono">
+                      ✓ +{{ activeQuizAssignment.my_submission.quiz_answers[q.id].points_earned }} / {{ q.points }} pts
+                    </span>
+                    <span v-else class="text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300 text-[10px]">
+                      ⏳ Pending Evaluation (Max {{ q.points }} pts)
+                    </span>
+                  </template>
+                  <span v-else-if="activeQuizAssignment.my_submission.quiz_answers[q.id].is_correct" class="text-emerald-700 font-mono">
                     ✓ +{{ activeQuizAssignment.my_submission.quiz_answers[q.id].points_earned }} pts
                   </span>
-                  <span v-else class="text-rose-600">
+                  <span v-else class="text-rose-600 font-mono">
                     ✕ 0 / {{ q.points }} pts
                   </span>
                 </span>
