@@ -135,10 +135,16 @@
               v-for="sub in currentSemesterSubjects" 
               :key="sub.enrollment_subject_id || sub.subject_id"
               :class="[
-                'p-4 sm:p-5 rounded-2xl border transition shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs group',
-                getSubjectTheme(sub.subject_code).bg,
-                getSubjectTheme(sub.subject_code).border
+                'p-4 sm:p-5 rounded-2xl border border-slate-200/90 bg-white transition-all duration-200 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs group cursor-pointer',
+                getSubjectTheme(sub.subject_code).accentBorder,
+                hoveredSubjectCode && isSameSubject(hoveredSubjectCode, sub.subject_code)
+                  ? 'ring-2 ring-slate-800 shadow-md scale-[1.005]'
+                  : hoveredSubjectCode
+                    ? 'opacity-40'
+                    : 'hover:shadow-xs hover:border-slate-300'
               ]"
+              @mouseenter="hoveredSubjectCode = sub.subject_code"
+              @mouseleave="hoveredSubjectCode = null"
             >
               <div class="space-y-1.5 min-w-0 flex-1">
                 <div class="flex items-center space-x-2 flex-wrap gap-y-1">
@@ -220,11 +226,11 @@
                 <tbody class="divide-y divide-slate-100 text-xs">
                   <template v-for="(slot, idx) in timeSlots" :key="idx">
                     <!-- RECESS OR LUNCH BREAK ROW -->
-                    <tr v-if="slot.isBreak" class="bg-amber-50/70 border-y border-amber-200/90">
-                      <td colspan="6" class="py-2.5 px-4 text-center font-bold text-amber-900 text-xs tracking-wide">
+                    <tr v-if="slot.isBreak" class="bg-slate-100/70 border-y border-slate-200/80">
+                      <td colspan="6" class="py-2.5 px-4 text-center font-bold text-slate-700 text-xs tracking-wide">
                         <span class="mr-1.5">{{ slot.icon }}</span>
                         <span>{{ slot.label }}</span>
-                        <span class="font-mono text-amber-700 text-[11px] ml-2 font-normal">({{ slot.time }})</span>
+                        <span class="font-mono text-slate-500 text-[11px] ml-2 font-normal">({{ slot.time }})</span>
                       </td>
                     </tr>
 
@@ -244,11 +250,17 @@
                       >
                         <div 
                           v-if="getScheduleAt(day, slot.start)" 
+                          @mouseenter="hoveredSubjectCode = getScheduleAt(day, slot.start).subject_code"
+                          @mouseleave="hoveredSubjectCode = null"
                           :class="[
-                            getSubjectTheme(getScheduleAt(day, slot.start).subject_code).bg,
-                            getSubjectTheme(getScheduleAt(day, slot.start).subject_code).border
+                            'p-2.5 rounded-xl border border-slate-200/90 bg-white transition-all duration-200 shadow-2xs space-y-1.5 cursor-pointer relative',
+                            getSubjectTheme(getScheduleAt(day, slot.start).subject_code).accentBorder,
+                            hoveredSubjectCode && isSameSubject(hoveredSubjectCode, getScheduleAt(day, slot.start).subject_code)
+                              ? 'ring-2 ring-slate-800 shadow-md scale-[1.02] z-10'
+                              : hoveredSubjectCode
+                                ? 'opacity-35 scale-[0.98]'
+                                : 'hover:shadow-xs hover:border-slate-300'
                           ]"
-                          class="p-2.5 rounded-xl border transition shadow-2xs hover:shadow-xs space-y-1.5"
                         >
                           <div class="flex items-center justify-between gap-1">
                             <span 
@@ -257,14 +269,14 @@
                             >
                               {{ getScheduleAt(day, slot.start).subject_code }}
                             </span>
-                            <span class="text-[9px] font-semibold text-slate-500 px-1.5 py-0.5 rounded bg-white/90 border border-slate-200/70">
+                            <span class="text-[9px] font-semibold text-slate-500 px-1.5 py-0.5 rounded bg-slate-50 border border-slate-200/80">
                               {{ getScheduleAt(day, slot.start).room || 'Room 401' }}
                             </span>
                           </div>
                           <div class="font-bold text-xs text-slate-900 leading-snug line-clamp-2">
                             {{ getScheduleAt(day, slot.start).subject_title || getScheduleAt(day, slot.start).title }}
                           </div>
-                          <div class="text-[10px] text-slate-600 flex items-center space-x-1 pt-1 border-t border-slate-200/60">
+                          <div class="text-[10px] text-slate-600 flex items-center space-x-1 pt-1 border-t border-slate-100">
                             <User class="w-3 h-3 text-slate-400 shrink-0" />
                             <span class="truncate font-medium text-slate-700">
                               {{ getScheduleAt(day, slot.start).teacher_first }} {{ getScheduleAt(day, slot.start).teacher_last }}
@@ -327,10 +339,16 @@
                 <!-- Instructional Period Card -->
                 <div 
                   :class="[
-                    'p-4 sm:p-5 rounded-2xl border transition shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs group',
-                    getSubjectTheme(s.subject_code).bg,
-                    getSubjectTheme(s.subject_code).border
+                    'p-4 sm:p-5 rounded-2xl border border-slate-200/90 bg-white transition-all duration-200 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs group cursor-pointer',
+                    getSubjectTheme(s.subject_code).accentBorder,
+                    hoveredSubjectCode && isSameSubject(hoveredSubjectCode, s.subject_code)
+                      ? 'ring-2 ring-slate-800 shadow-md scale-[1.005]'
+                      : hoveredSubjectCode
+                        ? 'opacity-40'
+                        : 'hover:shadow-xs hover:border-slate-300'
                   ]"
+                  @mouseenter="hoveredSubjectCode = s.subject_code"
+                  @mouseleave="hoveredSubjectCode = null"
                 >
                   <div class="flex items-start sm:items-center space-x-4">
                     <!-- Period Number & Time Box -->
@@ -2584,18 +2602,25 @@ const getScheduleAt = (day, timeStart) => {
   });
 };
 
+const hoveredSubjectCode = ref(null);
+
+const isSameSubject = (codeA, codeB) => {
+  if (!codeA || !codeB) return false;
+  return codeA.trim().toUpperCase() === codeB.trim().toUpperCase();
+};
+
 const getSubjectTheme = (code) => {
-  if (!code) return { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-800', badge: 'bg-slate-100 text-slate-700' };
+  if (!code) return { accentBorder: 'border-l-4 border-l-slate-400', badge: 'bg-slate-100 text-slate-700 border border-slate-200', text: 'text-slate-800' };
   const c = code.toUpperCase();
-  if (c.includes('SCI')) return { bg: 'bg-emerald-50/80', border: 'border-emerald-200', text: 'text-emerald-950', badge: 'bg-emerald-100 text-emerald-800' };
-  if (c.includes('MATH')) return { bg: 'bg-blue-50/80', border: 'border-blue-200', text: 'text-blue-950', badge: 'bg-blue-100 text-blue-800' };
-  if (c.includes('ENG')) return { bg: 'bg-indigo-50/80', border: 'border-indigo-200', text: 'text-indigo-950', badge: 'bg-indigo-100 text-indigo-800' };
-  if (c.includes('FIL')) return { bg: 'bg-amber-50/80', border: 'border-amber-200', text: 'text-amber-950', badge: 'bg-amber-100 text-amber-800' };
-  if (c.includes('AP')) return { bg: 'bg-rose-50/80', border: 'border-rose-200', text: 'text-rose-950', badge: 'bg-rose-100 text-rose-800' };
-  if (c.includes('MAPEH')) return { bg: 'bg-purple-50/80', border: 'border-purple-200', text: 'text-purple-950', badge: 'bg-purple-100 text-purple-800' };
-  if (c.includes('TLE')) return { bg: 'bg-teal-50/80', border: 'border-teal-200', text: 'text-teal-950', badge: 'bg-teal-100 text-teal-800' };
-  if (c.includes('ESP')) return { bg: 'bg-cyan-50/80', border: 'border-cyan-200', text: 'text-cyan-950', badge: 'bg-cyan-100 text-cyan-800' };
-  return { bg: 'bg-slate-50/80', border: 'border-slate-200', text: 'text-slate-900', badge: 'bg-slate-100 text-slate-800' };
+  if (c.includes('SCI')) return { accentBorder: 'border-l-4 border-l-emerald-500', badge: 'bg-emerald-50 text-emerald-700 border border-emerald-200/80', text: 'text-emerald-950' };
+  if (c.includes('MATH')) return { accentBorder: 'border-l-4 border-l-blue-600', badge: 'bg-blue-50 text-blue-700 border border-blue-200/80', text: 'text-blue-950' };
+  if (c.includes('ENG')) return { accentBorder: 'border-l-4 border-l-indigo-600', badge: 'bg-indigo-50 text-indigo-700 border border-indigo-200/80', text: 'text-indigo-950' };
+  if (c.includes('FIL')) return { accentBorder: 'border-l-4 border-l-amber-500', badge: 'bg-amber-50 text-amber-700 border border-amber-200/80', text: 'text-amber-950' };
+  if (c.includes('AP')) return { accentBorder: 'border-l-4 border-l-rose-500', badge: 'bg-rose-50 text-rose-700 border border-rose-200/80', text: 'text-rose-950' };
+  if (c.includes('MAPEH')) return { accentBorder: 'border-l-4 border-l-purple-500', badge: 'bg-purple-50 text-purple-700 border border-purple-200/80', text: 'text-purple-950' };
+  if (c.includes('TLE') || c.includes('ICT') || c.includes('TVL') || c.includes('HE')) return { accentBorder: 'border-l-4 border-l-teal-600', badge: 'bg-teal-50 text-teal-700 border border-teal-200/80', text: 'text-teal-950' };
+  if (c.includes('ESP')) return { accentBorder: 'border-l-4 border-l-cyan-600', badge: 'bg-cyan-50 text-cyan-700 border border-cyan-200/80', text: 'text-cyan-950' };
+  return { accentBorder: 'border-l-4 border-l-slate-400', badge: 'bg-slate-100 text-slate-800 border border-slate-200', text: 'text-slate-900' };
 };
 
 const timeSlots = computed(() => {
