@@ -49,10 +49,21 @@ export async function apiRequest(endpoint, options = {}) {
   try {
     const response = await fetch(url, {
       ...options,
-      headers
+      headers,
+      credentials: 'include'
     });
 
-    const data = await response.json();
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseErr) {
+      if (text.includes('slowAES') || text.includes('__test') || text.includes('aes.js')) {
+        throw new Error('Security verification in progress. Please refresh the page and try logging in again.');
+      }
+      const cleanError = text.replace(/<[^>]*>?/gm, '').trim();
+      throw new Error(cleanError.substring(0, 150) || 'Server returned an invalid non-JSON response.');
+    }
 
     if (!response.ok || !data.success) {
       if (response.status === 401) {
@@ -61,7 +72,7 @@ export async function apiRequest(endpoint, options = {}) {
         localStorage.removeItem('sia_auth_token');
         localStorage.removeItem('sia_auth_user');
       }
-      throw new Error(data.message || 'An error occurred during the request.');
+      throw new Error(data.message || data.error || 'An error occurred during the request.');
     }
 
     return data;

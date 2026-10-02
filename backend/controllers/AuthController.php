@@ -70,12 +70,29 @@ class AuthController {
         if ($user) {
             $isPasswordValid = password_verify($password, $user['password']);
 
+            // Direct plaintext fallback for legacy/seeded accounts (auto-upgrades to bcrypt)
+            if (!$isPasswordValid && $user['password'] === $password) {
+                $isPasswordValid = true;
+                $newHash = password_hash($password, PASSWORD_BCRYPT);
+                $db->prepare("UPDATE users SET password = :pw WHERE id = :id")->execute(['pw' => $newHash, 'id' => $user['id']]);
+            }
+
             // Student Portal login resilience: support default password (student's last name) or linked applicant password
             if (!$isPasswordValid && $user['role_slug'] === 'student') {
                 $trimmedInput = trim($password);
                 $lastName = trim($user['last_name'] ?? '');
 
-                // 1. Check if input matches student's last name case-insensitively (e.g. TING, Ting, ting)
+                // Fallback check last name from enrollments if user_profile was missing
+                if (empty($lastName)) {
+                    $enrStmt = $db->prepare("
+                        SELECT student_last_name FROM enrollments 
+                        WHERE student_id = :id OR official_student_no = :sno OR lrn = :ident LIMIT 1
+                    ");
+                    $enrStmt->execute(['id' => $user['id'], 'sno' => $user['student_id'] ?? '', 'ident' => $identity]);
+                    $lastName = $enrStmt->fetchColumn() ?: '';
+                }
+
+                // 1. Check if input matches student's last name case-insensitively (e.g. TING, Ting, ting, Messi)
                 if (!empty($lastName) && strcasecmp($trimmedInput, $lastName) === 0) {
                     $isPasswordValid = true;
                     // Auto-sync password hash to standard bcrypt for future logins
