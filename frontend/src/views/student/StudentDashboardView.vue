@@ -140,7 +140,7 @@
                 hoveredSubjectCode && isSameSubject(hoveredSubjectCode, sub.subject_code)
                   ? 'ring-2 ring-slate-800 shadow-md scale-[1.005]'
                   : hoveredSubjectCode
-                    ? 'opacity-40'
+                    ? 'opacity-70'
                     : 'hover:shadow-xs hover:border-slate-300'
               ]"
               @mouseenter="hoveredSubjectCode = sub.subject_code"
@@ -258,7 +258,7 @@
                             hoveredSubjectCode && isSameSubject(hoveredSubjectCode, getScheduleAt(day, slot.start).subject_code)
                               ? 'ring-2 ring-slate-800 shadow-md scale-[1.02] z-10'
                               : hoveredSubjectCode
-                                ? 'opacity-35 scale-[0.98]'
+                                ? 'opacity-70'
                                 : 'hover:shadow-xs hover:border-slate-300'
                           ]"
                         >
@@ -344,7 +344,7 @@
                     hoveredSubjectCode && isSameSubject(hoveredSubjectCode, s.subject_code)
                       ? 'ring-2 ring-slate-800 shadow-md scale-[1.005]'
                       : hoveredSubjectCode
-                        ? 'opacity-40'
+                        ? 'opacity-70'
                         : 'hover:shadow-xs hover:border-slate-300'
                   ]"
                   @mouseenter="hoveredSubjectCode = s.subject_code"
