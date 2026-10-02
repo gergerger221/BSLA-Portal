@@ -399,7 +399,7 @@ class TeacherController {
             $audit->execute([
                 'user_id' => $user['id'],
                 'details' => "Teacher @{$user['username']} saved {$savedCount} grades for Subject ID #{$subjectId} in Section ID #{$sectionId}.",
-                'ip' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'
+                'ip' => Auth::getClientIp()
             ]);
 
             $db->commit();
@@ -549,7 +549,7 @@ class TeacherController {
         $audit->execute([
             'user_id' => $user['id'],
             'details' => "Teacher @{$user['username']} updated DepEd SF9 Learner Core Values for Section ID #{$sectionId}.",
-            'ip' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'
+            'ip' => Auth::getClientIp()
         ]);
 
         Response::success('DepEd SF9 Learner Core Values saved successfully.');

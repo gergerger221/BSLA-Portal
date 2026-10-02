@@ -124,12 +124,41 @@ class Auth {
     }
 
     /**
+     * Resolves the real client IP address safely across CDNs (Cloudflare), reverse proxies, and FastCGI.
+     */
+    public static function getClientIp(): string {
+        $headers = [
+            'HTTP_CF_CONNECTING_IP',     // Cloudflare direct client IP
+            'HTTP_X_REAL_IP',            // Nginx / Reverse Proxy
+            'HTTP_X_FORWARDED_FOR',      // Load balancer / Proxy chain
+            'REMOTE_ADDR'                // Standard server IP
+        ];
+
+        foreach ($headers as $header) {
+            if (!empty($_SERVER[$header])) {
+                $raw = trim((string) $_SERVER[$header]);
+                // X-Forwarded-For may contain comma-separated IPs (client, proxy1, proxy2...)
+                $ips = explode(',', $raw);
+                foreach ($ips as $ipCandidate) {
+                    $ip = trim($ipCandidate);
+                    // Filter and validate IP format (IPv4 or IPv6) and avoid invalid strings
+                    if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
+                        return $ip;
+                    }
+                }
+            }
+        }
+
+        return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+    }
+
+    /**
      * VULN-06 fix: Check and enforce login rate limiting.
      * Returns true if the IP is allowed to attempt login, false if rate-limited.
      */
     public static function checkRateLimit(string $identity): bool {
         $db = Database::getConnection();
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+        $ip = self::getClientIp();
         $windowSeconds = 30;
         $maxAttempts = 5;
 
@@ -152,7 +181,7 @@ class Auth {
     public static function recordLoginAttempt(string $identity, bool $success): void {
         try {
             $db = Database::getConnection();
-            $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+            $ip = self::getClientIp();
             $ua = $_SERVER['HTTP_USER_AGENT'] ?? 'CLI/Unknown';
 
             $stmt = $db->prepare("
@@ -182,7 +211,7 @@ class Auth {
     public static function logAudit(string $action, string $details = '', ?int $userId = null): void {
         try {
             $db = Database::getConnection();
-            $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+            $ip = self::getClientIp();
             $ua = $_SERVER['HTTP_USER_AGENT'] ?? 'CLI/Unknown';
             $stmt = $db->prepare("
                 INSERT INTO audit_logs (user_id, action, details, ip_address, user_agent)
