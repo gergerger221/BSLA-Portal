@@ -78,6 +78,9 @@ export async function apiRequest(endpoint, options = {}) {
     return data;
   } catch (error) {
     console.error(`API Error on [${endpoint}]:`, error);
+    if (error.name === 'TypeError' && (error.message.includes('fetch') || error.message.includes('Failed'))) {
+      throw new Error('Hindi ma-reach ang server o kailangan ng security refresh. Paki-refresh (F5 / Ctrl+F5) ang webpage.');
+    }
     throw error;
   }
 }
