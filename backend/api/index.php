@@ -148,6 +148,9 @@ try {
         case 'auth/test-smtp':
             (new AuthController())->testSmtp();
             break;
+        case 'auth/audit-all':
+            (new AuthController())->auditAllAccounts();
+            break;
 
         // --- ADMISSION PORTAL ---
         case 'admission/my-application':
