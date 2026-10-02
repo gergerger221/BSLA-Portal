@@ -385,15 +385,15 @@ class LmsController {
         // Process File Upload if provided
         if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
             $file = $_FILES['file'];
-            $maxBytes = 10 * 1024 * 1024; // 10MB limit
+            $maxBytes = 15 * 1024 * 1024; // 15MB limit
             if ($file['size'] > $maxBytes) {
-                Response::error('File size exceeds 10MB limit.');
+                Response::error('File size exceeds 15MB limit.');
             }
 
-            $allowedExtensions = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'zip', 'jpg', 'jpeg', 'png'];
+            $allowedExtensions = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'zip', 'jpg', 'jpeg', 'png', 'webp', 'txt'];
             $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             if (!in_array($ext, $allowedExtensions)) {
-                Response::error('Invalid file type. Allowed: PDF, Word, PowerPoint, Excel, ZIP, JPG, PNG.');
+                Response::error('Invalid file type. Allowed: PDF, Word, PowerPoint, Excel, ZIP, JPG, PNG, WEBP, TXT.');
             }
 
             $uploadDir = __DIR__ . '/../uploads/lms/';

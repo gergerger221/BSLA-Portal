@@ -503,12 +503,21 @@
 
               <!-- Action Buttons Row -->
               <div class="flex items-center justify-end space-x-1.5 pt-1 border-t border-slate-200/50">
+                <button 
+                  v-if="item.file_path" 
+                  type="button" 
+                  @click="openModulePreview(item)" 
+                  class="px-2.5 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 font-semibold text-[10px] transition inline-flex items-center space-x-1 cursor-pointer"
+                >
+                  <Eye class="w-3 h-3 text-blue-700" />
+                  <span>View</span>
+                </button>
                 <a 
                   v-if="item.file_path" 
                   :href="getFileUrl(item.file_path)" 
                   target="_blank" 
                   download 
-                  class="px-2.5 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 font-semibold text-[10px] transition inline-flex items-center space-x-1 cursor-pointer"
+                  class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[10px] transition inline-flex items-center space-x-1 cursor-pointer"
                 >
                   <Download class="w-3 h-3" />
                   <span>Download</span>
@@ -1610,12 +1619,21 @@
                   </div>
 
                   <div class="shrink-0 flex items-center space-x-2">
+                    <button 
+                      v-if="m.file_path" 
+                      type="button" 
+                      @click="openModulePreview(m)" 
+                      class="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 font-semibold text-xs transition flex items-center space-x-1.5 shadow-2xs cursor-pointer"
+                    >
+                      <Eye class="w-3.5 h-3.5 text-blue-700" />
+                      <span>View Handout</span>
+                    </button>
                     <a 
                       v-if="m.file_path" 
                       :href="getFileUrl(m.file_path)" 
                       target="_blank" 
                       download 
-                      class="px-3.5 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-800 text-white font-semibold text-xs transition flex items-center space-x-1.5 shadow-2xs cursor-pointer"
+                      class="px-3 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-800 text-white font-semibold text-xs transition flex items-center space-x-1.5 shadow-2xs cursor-pointer"
                     >
                       <Download class="w-3.5 h-3.5" />
                       <span>Download ({{ m.file_size_kb || 0 }} KB)</span>
@@ -2660,23 +2678,27 @@
     <!-- ======================================================== -->
     <!-- MODAL: DOCUMENT PREVIEW (PDF / IMAGE)                   -->
     <!-- ======================================================== -->
+    <!-- MODAL: DOCUMENT PREVIEW (PDF / WORD DOCX / IMAGE / FILES)-->
+    <!-- ======================================================== -->
     <div v-if="previewDocModal" class="no-print fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div class="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
         <!-- Header -->
         <div class="p-4 sm:px-6 border-b border-slate-200 flex items-center justify-between bg-slate-900 text-white">
           <div class="flex items-center space-x-3">
-            <FileText class="w-5 h-5 text-emerald-400" />
+            <div class="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400 font-bold">
+              <FileText class="w-5 h-5" />
+            </div>
             <div>
-              <h3 class="font-bold text-sm text-white">{{ previewDocModal.title }}</h3>
-              <p class="text-[11px] text-slate-400 font-mono">{{ previewDocModal.file_path }}</p>
+              <h3 class="font-bold text-sm text-white line-clamp-1">{{ previewDocModal.title }}</h3>
+              <p class="text-[11px] text-slate-400 font-mono line-clamp-1">{{ previewDocModal.file_path }}</p>
             </div>
           </div>
-          <div class="flex items-center space-x-2">
+          <div class="flex items-center space-x-2 shrink-0">
             <a 
               :href="getFileUrl(previewDocModal.file_path)" 
               target="_blank" 
               download
-              class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1.5 transition"
+              class="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center space-x-1.5 shadow-sm transition"
             >
               <Download class="w-3.5 h-3.5" />
               <span>Download</span>
@@ -2692,17 +2714,86 @@
 
         <!-- Body -->
         <div class="flex-1 p-4 sm:p-6 overflow-y-auto bg-slate-100 flex items-center justify-center min-h-[420px]">
+          <!-- PDF Document Embed -->
           <iframe 
-            v-if="previewDocModal.file_path.toLowerCase().endsWith('.pdf')" 
+            v-if="isPdf(previewDocModal.file_path, previewDocModal.title)" 
             :src="getFileUrl(previewDocModal.file_path)" 
             class="w-full h-[70vh] rounded-xl border border-slate-300 bg-white shadow-inner"
           ></iframe>
-          <div v-else class="max-h-[70vh] overflow-auto flex items-center justify-center">
+
+          <!-- In-Browser Word Document (.docx) Viewer -->
+          <div v-else-if="isWord(previewDocModal.file_path, previewDocModal.title)" class="w-full flex flex-col items-center">
+            <!-- Loading indicator while rendering -->
+            <div v-if="isRenderingDocx" class="p-12 text-center space-y-3">
+              <Loader2 class="w-8 h-8 animate-spin text-blue-600 mx-auto" />
+              <p class="text-xs text-slate-500 font-medium">Rendering Word document preview...</p>
+            </div>
+
+            <!-- Fallback error if docx cannot be rendered inline (e.g. legacy binary .doc) -->
+            <div v-else-if="docxRenderError" class="p-8 text-center space-y-4 max-w-md bg-white rounded-3xl border border-slate-200 shadow-sm animate-in fade-in zoom-in-95">
+              <div class="w-16 h-16 rounded-2xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center mx-auto shadow-inner">
+                <FileText class="w-8 h-8 text-blue-600" />
+              </div>
+              <div>
+                <div class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-900 mb-1.5 border border-blue-200">
+                  Microsoft Word Document
+                </div>
+                <h4 class="font-bold text-slate-800 text-sm truncate max-w-xs mx-auto">{{ previewDocModal.title || 'document.docx' }}</h4>
+                <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                  This Word file format requires download to view on your device.
+                </p>
+              </div>
+              <a 
+                :href="getFileUrl(previewDocModal.file_path)" 
+                target="_blank" 
+                download
+                class="inline-flex items-center space-x-2 px-6 py-2.5 rounded-xl font-bold bg-blue-700 hover:bg-blue-600 text-white text-xs shadow-md shadow-blue-700/20 transition cursor-pointer"
+              >
+                <Download class="w-4 h-4" />
+                <span>Download & Open File</span>
+              </a>
+            </div>
+
+            <!-- Live Rendered Docx Document Pages -->
+            <div 
+              v-show="!isRenderingDocx && !docxRenderError" 
+              ref="docxContainerRef" 
+              class="w-full max-h-[75vh] overflow-y-auto bg-slate-200/80 p-4 sm:p-6 rounded-2xl border border-slate-300 shadow-inner flex flex-col items-center"
+            ></div>
+          </div>
+
+          <!-- Image Preview -->
+          <div v-else-if="isImage(previewDocModal.file_path, previewDocModal.title)" class="max-h-[70vh] overflow-auto flex items-center justify-center">
             <img 
               :src="getFileUrl(previewDocModal.file_path)" 
-              alt="Requirement Preview" 
+              :alt="previewDocModal.title" 
               class="max-w-full max-h-[68vh] rounded-xl shadow-lg object-contain border border-slate-300 bg-white"
             />
+          </div>
+
+          <!-- Generic Binary / ZIP / PPT Resource Card -->
+          <div v-else class="p-8 text-center space-y-4 max-w-md bg-white rounded-3xl border border-slate-200 shadow-sm">
+            <div class="w-16 h-16 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center mx-auto shadow-inner">
+              <Paperclip class="w-8 h-8 text-amber-600" />
+            </div>
+            <div>
+              <div class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-900 mb-1.5 border border-amber-200">
+                Learning Handout Resource
+              </div>
+              <h4 class="font-bold text-slate-800 text-sm truncate max-w-xs mx-auto">{{ previewDocModal.title }}</h4>
+              <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                Click below to download this material directly to your device.
+              </p>
+            </div>
+            <a 
+              :href="getFileUrl(previewDocModal.file_path)" 
+              target="_blank" 
+              download
+              class="inline-flex items-center space-x-2 px-6 py-2.5 rounded-xl font-bold bg-blue-900 hover:bg-blue-800 text-white text-xs shadow-md transition cursor-pointer"
+            >
+              <Download class="w-4 h-4" />
+              <span>Download Handout ({{ previewDocModal.file_size_kb || 0 }} KB)</span>
+            </a>
           </div>
         </div>
       </div>
@@ -2711,7 +2802,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { 
   Calendar, MapPin, FileText, Clock, User, BookOpen, Layers, 
@@ -2719,7 +2810,7 @@ import {
   ChevronRight, ChevronLeft, Download, ExternalLink, Paperclip, CheckCircle, 
   AlertCircle, AlertTriangle, Send, UploadCloud, MessageSquare, CheckCircle2,
   ShieldCheck, RefreshCw, Search, Filter, CalendarDays, Tag, Info, Bell, Users, Eye, X, Lock, Pin,
-  ListChecks, HelpCircle, Award
+  ListChecks, HelpCircle, Award, Loader2
 } from 'lucide-vue-next';
 import api, { getFileUrl } from '../../services/api';
 
@@ -3786,6 +3877,65 @@ const handlePaymongoReturn = async () => {
   }
 };
 
+const docxContainerRef = ref(null);
+const isRenderingDocx = ref(false);
+const docxRenderError = ref('');
+
+const isPdf = (filePath, title = '') => {
+  const combined = ((filePath || '') + ' ' + (title || '')).toLowerCase();
+  return combined.includes('.pdf');
+};
+
+const isWord = (filePath, title = '') => {
+  const combined = ((filePath || '') + ' ' + (title || '')).toLowerCase();
+  return combined.includes('.docx') || combined.includes('.doc');
+};
+
+const isImage = (filePath, title = '') => {
+  const combined = ((filePath || '') + ' ' + (title || '')).toLowerCase();
+  return combined.includes('.jpg') || combined.includes('.jpeg') || combined.includes('.png') || combined.includes('.webp') || combined.includes('.gif');
+};
+
+const openModulePreview = async (m) => {
+  if (!m || !m.file_path) return;
+  previewDocModal.value = {
+    title: m.title || 'Learning Handout',
+    file_path: m.file_path,
+    file_size_kb: m.file_size_kb || 0
+  };
+  docxRenderError.value = '';
+
+  if (isWord(m.file_path, m.title)) {
+    isRenderingDocx.value = true;
+    await nextTick();
+    try {
+      const url = getFileUrl(m.file_path);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to fetch document file from server.');
+      const blob = await res.blob();
+
+      if (docxContainerRef.value) {
+        docxContainerRef.value.innerHTML = '';
+        const { renderAsync } = await import('docx-preview');
+        await renderAsync(blob, docxContainerRef.value, null, {
+          className: 'docx-preview-doc',
+          inWrapper: true,
+          ignoreWidth: false,
+          ignoreHeight: false,
+          ignoreFonts: false,
+          breakPages: true,
+          experimental: true
+        });
+      }
+    } catch (err) {
+      console.warn('Docx rendering error:', err);
+      docxRenderError.value = err.message || 'Could not render document inline.';
+    } finally {
+      isRenderingDocx.value = false;
+    }
+  }
+};
+
 onMounted(async () => {
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const today = dayNames[new Date().getDay()];
@@ -3797,4 +3947,28 @@ onMounted(async () => {
   await handlePaymongoReturn();
 });
 </script>
+
+<style scoped>
+:deep(.docx-wrapper) {
+  background: transparent !important;
+  padding: 8px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 16px !important;
+  width: 100% !important;
+}
+:deep(.docx-wrapper > section.docx) {
+  margin-bottom: 16px !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+}
+:deep(.docx-wrapper article) {
+  font-family: Calibri, 'Segoe UI', Arial, sans-serif !important;
+}
+</style>
 
