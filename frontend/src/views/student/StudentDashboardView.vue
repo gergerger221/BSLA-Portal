@@ -1664,6 +1664,10 @@
                         >
                           {{ asg.task_type }}
                         </span>
+                        <span v-if="asg.submission_format === 'quiz'" class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-violet-50 text-violet-800 border border-violet-200 flex items-center space-x-1">
+                          <ListChecks class="w-3 h-3 text-violet-600" />
+                          <span>Interactive Quiz</span>
+                        </span>
                         <span class="text-xs font-mono font-bold text-slate-700">{{ asg.max_score }} Pts</span>
                         <span class="text-slate-300">•</span>
                         <span class="text-xs text-slate-500">{{ asg.quarter }}</span>
@@ -1761,37 +1765,86 @@
 
                   <!-- Action Buttons -->
                   <div class="pt-2 flex items-center justify-end space-x-2">
-                    <!-- 1. If Assignment is Graded: Lock it permanently -->
-                    <div 
-                      v-if="isAssignmentGraded(asg)"
-                      class="px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-semibold flex items-center space-x-1.5 border border-emerald-200 select-none shadow-2xs"
-                      title="This assignment has already been evaluated and graded by the teacher. Submissions are finalized and locked."
-                    >
-                      <Lock class="w-3.5 h-3.5 text-emerald-700" />
-                      <span>Graded & Locked</span>
-                    </div>
+                    <!-- QUIZ FORMAT BUTTONS -->
+                    <template v-if="asg.submission_format === 'quiz'">
+                      <!-- 1. If Graded -->
+                      <button 
+                        v-if="isAssignmentGraded(asg)"
+                        @click="openQuizTakerModal(asg)"
+                        type="button"
+                        class="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs transition flex items-center space-x-1.5 cursor-pointer"
+                      >
+                        <ListChecks class="w-3.5 h-3.5 text-emerald-700" />
+                        <span>View Results ({{ asg.my_submission.score ?? asg.my_submission.auto_graded_score }} / {{ asg.max_score }} Pts)</span>
+                      </button>
 
-                    <!-- 2. If Subject Term is Archived -->
-                    <div 
-                      v-else-if="isSubjectTermArchived(selectedLmsSubject)" 
-                      class="px-3.5 py-2 rounded-xl bg-slate-100 text-slate-500 text-xs font-semibold flex items-center space-x-1.5 border border-slate-200 cursor-not-allowed select-none"
-                      title="New submissions are disabled because this academic term has concluded"
-                    >
-                      <Lock class="w-3.5 h-3.5 text-slate-400" />
-                      <span>Submissions Closed (Archived Term)</span>
-                    </div>
+                      <!-- 2. If Submitted (Pending Essay Review) -->
+                      <button 
+                        v-else-if="asg.my_submission"
+                        @click="openQuizTakerModal(asg)"
+                        type="button"
+                        class="px-4 py-2 rounded-xl text-xs font-semibold bg-violet-50 hover:bg-violet-100 text-violet-800 border border-violet-300 shadow-2xs transition flex items-center space-x-1.5 cursor-pointer"
+                      >
+                        <Eye class="w-3.5 h-3.5 text-violet-700" />
+                        <span>View Submitted Answers</span>
+                      </button>
 
-                    <!-- 3. Otherwise: Submit or Resubmit Work with Deadline Awareness -->
-                    <button 
-                      v-else
-                      @click="openSubmitModal(asg)" 
-                      type="button" 
-                      class="px-4 py-2 rounded-xl text-xs font-semibold shadow-2xs transition flex items-center space-x-1.5 cursor-pointer"
-                      :class="isPastDeadline(asg.due_date) ? 'bg-amber-700 hover:bg-amber-800 text-white' : 'bg-blue-900 hover:bg-blue-800 text-white'"
-                    >
-                      <UploadCloud class="w-3.5 h-3.5" />
-                      <span>{{ asg.my_submission ? 'Resubmit / Edit Work' : (isPastDeadline(asg.due_date) ? 'Turn In Late' : 'Submit Work') }}</span>
-                    </button>
+                      <!-- 3. If Subject Term is Archived -->
+                      <div 
+                        v-else-if="isSubjectTermArchived(selectedLmsSubject)" 
+                        class="px-3.5 py-2 rounded-xl bg-slate-100 text-slate-500 text-xs font-semibold flex items-center space-x-1.5 border border-slate-200 cursor-not-allowed select-none"
+                      >
+                        <Lock class="w-3.5 h-3.5 text-slate-400" />
+                        <span>Quiz Closed (Archived Term)</span>
+                      </div>
+
+                      <!-- 4. Not yet submitted -> Take Quiz -->
+                      <button 
+                        v-else
+                        @click="openQuizTakerModal(asg)" 
+                        type="button" 
+                        class="px-4 py-2 rounded-xl text-xs font-bold shadow-2xs transition flex items-center space-x-1.5 cursor-pointer"
+                        :class="isPastDeadline(asg.due_date) ? 'bg-amber-700 hover:bg-amber-800 text-white' : 'bg-emerald-800 hover:bg-emerald-700 text-white'"
+                      >
+                        <ListChecks class="w-3.5 h-3.5" />
+                        <span>{{ isPastDeadline(asg.due_date) ? 'Take Quiz (Late)' : 'Take Online Quiz' }}</span>
+                      </button>
+                    </template>
+
+                    <!-- STANDARD TURN-IN FORMAT BUTTONS -->
+                    <template v-else>
+                      <!-- 1. If Assignment is Graded: Lock it permanently -->
+                      <div 
+                        v-if="isAssignmentGraded(asg)"
+                        class="px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-semibold flex items-center space-x-1.5 border border-emerald-200 select-none shadow-2xs"
+                        title="This assignment has already been evaluated and graded by the teacher. Submissions are finalized and locked."
+                      >
+                        <Lock class="w-3.5 h-3.5 text-emerald-700" />
+                        <span>Graded & Locked</span>
+                      </div>
+
+                      <!-- 2. If Subject Term is Archived -->
+                      <div 
+                        v-else-if="isSubjectTermArchived(selectedLmsSubject)" 
+                        class="px-3.5 py-2 rounded-xl bg-slate-100 text-slate-500 text-xs font-semibold flex items-center space-x-1.5 border border-slate-200 cursor-not-allowed select-none"
+                        title="New submissions are disabled because this academic term has concluded"
+                      >
+                        <Lock class="w-3.5 h-3.5 text-slate-400" />
+                        <span>Submissions Closed (Archived Term)</span>
+                      </div>
+
+                      <!-- 3. Otherwise: Submit or Resubmit Work with Deadline Awareness -->
+                      <button 
+                        v-else
+                        @click="openSubmitModal(asg)" 
+                        type="button" 
+                        class="px-4 py-2 rounded-xl text-xs font-semibold shadow-2xs transition flex items-center space-x-1.5 cursor-pointer"
+                        :class="isPastDeadline(asg.due_date) ? 'bg-amber-700 hover:bg-amber-800 text-white' : 'bg-blue-900 hover:bg-blue-800 text-white'"
+                      >
+                        <UploadCloud class="w-3.5 h-3.5" />
+                        <span>{{ asg.my_submission ? 'Resubmit / Edit Work' : (isPastDeadline(asg.due_date) ? 'Turn In Late' : 'Submit Work') }}</span>
+                      </button>
+                    </template>
                   </div>
                 </div>
               </div>
@@ -1916,6 +1969,216 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODAL: INTERACTIVE ONLINE QUIZ TAKER                      -->
+    <!-- ======================================================== -->
+    <div v-if="showQuizTakerModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col p-6 sm:p-7 shadow-2xl border border-slate-200 text-xs space-y-4">
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-violet-50 text-violet-800 border border-violet-200 font-mono">
+                {{ activeQuizAssignment?.task_type }} • Max {{ activeQuizAssignment?.max_score }} Pts
+              </span>
+              <span v-if="activeQuizAssignment?.my_submission" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                {{ activeQuizAssignment.my_submission.status === 'Graded' ? 'Graded / Finalized' : 'Submitted' }}
+              </span>
+            </div>
+            <h3 class="text-base font-extrabold text-slate-900 mt-1">{{ activeQuizAssignment?.title }}</h3>
+          </div>
+          <button @click="showQuizTakerModal = false" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold">✕</button>
+        </div>
+
+        <!-- Instructions & Deadline Banner -->
+        <div class="shrink-0 space-y-2">
+          <div v-if="activeQuizAssignment?.instructions" class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-[11px] leading-relaxed">
+            <strong>Instructions:</strong> {{ activeQuizAssignment.instructions }}
+          </div>
+
+          <div 
+            v-if="!activeQuizAssignment?.my_submission && activeQuizAssignment?.due_date"
+            :class="[
+              'p-2.5 rounded-xl border text-[11px] flex items-center space-x-2',
+              isPastDeadline(activeQuizAssignment.due_date) ? 'bg-rose-50 border-rose-200 text-rose-950 font-medium' : 'bg-blue-50 border-blue-200 text-blue-950'
+            ]"
+          >
+            <AlertTriangle v-if="isPastDeadline(activeQuizAssignment.due_date)" class="w-3.5 h-3.5 text-rose-600 shrink-0" />
+            <Clock v-else class="w-3.5 h-3.5 text-blue-600 shrink-0" />
+            <span>{{ isPastDeadline(activeQuizAssignment.due_date) ? 'Past Deadline: Quiz submission will be recorded as Late.' : `Deadline: ${formatDeadline(activeQuizAssignment.due_date)}` }}</span>
+          </div>
+
+          <!-- If Already Graded Banner -->
+          <div v-if="activeQuizAssignment?.my_submission" class="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-emerald-950 flex items-center justify-between">
+            <div class="space-y-0.5">
+              <div class="font-bold text-xs flex items-center space-x-1.5">
+                <CheckCircle2 class="w-4 h-4 text-emerald-600" />
+                <span>Quiz Evaluated: {{ activeQuizAssignment.my_submission.score ?? activeQuizAssignment.my_submission.auto_graded_score }} / {{ activeQuizAssignment.max_score }} Points</span>
+              </div>
+              <div v-if="activeQuizAssignment.my_submission.teacher_feedback" class="text-[11px] text-emerald-800">
+                Feedback: {{ activeQuizAssignment.my_submission.teacher_feedback }}
+              </div>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-white border border-emerald-300 text-emerald-800 font-mono">
+              {{ activeQuizAssignment.my_submission.status }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Questions List Body -->
+        <div class="overflow-y-auto flex-1 space-y-4 pr-1">
+          <div 
+            v-for="(q, idx) in activeQuizAssignment?.quiz_questions" 
+            :key="q.id"
+            class="p-4 rounded-2xl border space-y-3 bg-white"
+            :class="[
+              activeQuizAssignment?.my_submission?.quiz_answers?.[q.id]
+                ? (activeQuizAssignment.my_submission.quiz_answers[q.id].type === 'essay'
+                    ? 'border-purple-200 bg-purple-50/10'
+                    : (activeQuizAssignment.my_submission.quiz_answers[q.id].is_correct ? 'border-emerald-300 bg-emerald-50/20' : 'border-rose-300 bg-rose-50/20'))
+                : 'border-slate-200'
+            ]"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="w-6 h-6 rounded-full bg-slate-900 text-white text-[11px] font-bold flex items-center justify-center font-mono">
+                  {{ idx + 1 }}
+                </span>
+                <span 
+                  class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                  :class="{
+                    'bg-blue-50 text-blue-800 border border-blue-200': q.type === 'multiple_choice',
+                    'bg-amber-50 text-amber-800 border border-amber-200': q.type === 'identification',
+                    'bg-purple-50 text-purple-800 border border-purple-200': q.type === 'essay'
+                  }"
+                >
+                  {{ q.type === 'multiple_choice' ? 'Multiple Choice' : (q.type === 'identification' ? 'Identification' : 'Essay') }}
+                </span>
+              </div>
+
+              <!-- Question Score / Result Tag -->
+              <div>
+                <span v-if="activeQuizAssignment?.my_submission?.quiz_answers?.[q.id]" class="font-bold text-[11px]">
+                  <span v-if="activeQuizAssignment.my_submission.quiz_answers[q.id].type === 'essay'" class="text-purple-700">
+                    Essay ({{ q.points }} pts)
+                  </span>
+                  <span v-else-if="activeQuizAssignment.my_submission.quiz_answers[q.id].is_correct" class="text-emerald-700">
+                    ✓ +{{ activeQuizAssignment.my_submission.quiz_answers[q.id].points_earned }} pts
+                  </span>
+                  <span v-else class="text-rose-600">
+                    ✕ 0 / {{ q.points }} pts
+                  </span>
+                </span>
+                <span v-else class="font-mono text-slate-500 font-bold text-[11px]">
+                  {{ q.points }} {{ q.points === 1 ? 'pt' : 'pts' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Question Prompt -->
+            <p class="font-bold text-slate-900 text-xs leading-relaxed whitespace-pre-line">{{ q.question }}</p>
+
+            <!-- 1. MULTIPLE CHOICE -->
+            <div v-if="q.type === 'multiple_choice'" class="space-y-2 pt-1">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <label 
+                  v-for="(opt, optIdx) in q.options" 
+                  :key="optIdx"
+                  :class="[
+                    'p-2.5 rounded-xl border flex items-center space-x-2.5 transition select-none',
+                    isQuizReadOnly 
+                      ? 'cursor-default' 
+                      : 'cursor-pointer hover:border-violet-400 hover:bg-violet-50/50',
+                    quizAnswersState[q.id] === opt 
+                      ? 'border-violet-600 bg-violet-50 text-violet-950 font-bold shadow-2xs' 
+                      : 'border-slate-200 bg-white text-slate-700'
+                  ]"
+                >
+                  <input 
+                    type="radio" 
+                    :name="`quiz_q_${q.id}`" 
+                    :value="opt" 
+                    :disabled="isQuizReadOnly"
+                    v-model="quizAnswersState[q.id]" 
+                    class="text-violet-600 focus:ring-violet-500 shrink-0" 
+                  />
+                  <span class="font-mono font-bold text-slate-400 text-[11px] shrink-0">
+                    {{ ['A', 'B', 'C', 'D'][optIdx] || (optIdx + 1) }}.
+                  </span>
+                  <span class="text-xs">{{ opt }}</span>
+                </label>
+              </div>
+
+              <!-- Read-only correctness banner -->
+              <div v-if="activeQuizAssignment?.my_submission?.quiz_answers?.[q.id] && activeQuizAssignment.my_submission.status === 'Graded'" class="mt-1 text-[11px]">
+                <div v-if="!activeQuizAssignment.my_submission.quiz_answers[q.id].is_correct" class="text-rose-600 font-semibold">
+                  Correct Answer: <strong class="underline">{{ activeQuizAssignment.my_submission.quiz_answers[q.id].correct_answer }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. IDENTIFICATION -->
+            <div v-else-if="q.type === 'identification'" class="space-y-1.5 pt-1">
+              <input 
+                v-model="quizAnswersState[q.id]" 
+                type="text" 
+                :disabled="isQuizReadOnly"
+                placeholder="Type your exact answer here..." 
+                class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-violet-500 focus:outline-none disabled:bg-slate-50 disabled:text-slate-700"
+              />
+              <div v-if="activeQuizAssignment?.my_submission?.quiz_answers?.[q.id] && activeQuizAssignment.my_submission.status === 'Graded' && !activeQuizAssignment.my_submission.quiz_answers[q.id].is_correct" class="text-[11px] text-rose-600 font-semibold">
+                Correct Answer: <strong class="underline">{{ activeQuizAssignment.my_submission.quiz_answers[q.id].correct_answer }}</strong>
+              </div>
+            </div>
+
+            <!-- 3. ESSAY -->
+            <div v-else-if="q.type === 'essay'" class="space-y-1.5 pt-1">
+              <textarea 
+                v-model="quizAnswersState[q.id]" 
+                rows="3" 
+                :disabled="isQuizReadOnly"
+                placeholder="Write your comprehensive essay response here..." 
+                class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-violet-500 focus:outline-none disabled:bg-slate-50 disabled:text-slate-700"
+              ></textarea>
+              <div class="flex items-center justify-between text-[10px] text-slate-400">
+                <span>Evaluated manually by instructor</span>
+                <span>{{ (quizAnswersState[q.id] || '').trim().split(/\s+/).filter(Boolean).length }} words</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-between shrink-0">
+          <div class="text-[11px] font-semibold text-slate-500">
+            <span v-if="!isQuizReadOnly">
+              Answered {{ answeredQuizCount }} / {{ activeQuizAssignment?.quiz_questions?.length || 0 }} questions
+            </span>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <button 
+              type="button" 
+              @click="showQuizTakerModal = false" 
+              class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold cursor-pointer"
+            >
+              {{ isQuizReadOnly ? 'Close' : 'Cancel' }}
+            </button>
+            <button 
+              v-if="!isQuizReadOnly"
+              type="button" 
+              @click="submitStudentQuiz()"
+              :disabled="isSubmittingWork" 
+              class="px-5 py-2.5 rounded-xl font-bold bg-emerald-800 hover:bg-emerald-700 disabled:opacity-50 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer"
+            >
+              <Send class="w-3.5 h-3.5" />
+              <span>{{ isSubmittingWork ? 'Submitting & Grading...' : 'Submit Answers' }}</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2425,7 +2688,8 @@ import {
   Sparkles, CreditCard, LayoutGrid, List, Coffee, Utensils, 
   ChevronRight, ChevronLeft, Download, ExternalLink, Paperclip, CheckCircle, 
   AlertCircle, AlertTriangle, Send, UploadCloud, MessageSquare, CheckCircle2,
-  ShieldCheck, RefreshCw, Search, Filter, CalendarDays, Tag, Info, Bell, Users, Eye, X, Lock, Pin
+  ShieldCheck, RefreshCw, Search, Filter, CalendarDays, Tag, Info, Bell, Users, Eye, X, Lock, Pin,
+  ListChecks, HelpCircle, Award
 } from 'lucide-vue-next';
 import api, { getFileUrl } from '../../services/api';
 
@@ -3153,6 +3417,16 @@ const showSubmitModal = ref(false);
 const activeSubmittingAssignment = ref(null);
 const submissionForm = ref({ text: '', file: null });
 const isSubmittingWork = ref(false);
+
+const showQuizTakerModal = ref(false);
+const activeQuizAssignment = ref(null);
+const quizAnswersState = ref({});
+const isQuizReadOnly = computed(() => !!activeQuizAssignment.value?.my_submission);
+const answeredQuizCount = computed(() => {
+  if (!activeQuizAssignment.value?.quiz_questions) return 0;
+  return Object.values(quizAnswersState.value).filter(val => typeof val === 'string' && val.trim().length > 0).length;
+});
+
 const lmsMessage = ref('');
 const lmsError = ref('');
 
@@ -3330,6 +3604,70 @@ const submitStudentWork = async () => {
     setTimeout(() => { lmsMessage.value = ''; }, 3500);
   } catch (err) {
     showNotice('Submission Error', 'Failed to submit work: ' + err.message, 'error');
+  } finally {
+    isSubmittingWork.value = false;
+  }
+};
+
+const openQuizTakerModal = (asg) => {
+  activeQuizAssignment.value = asg;
+  quizAnswersState.value = {};
+  
+  if (asg.my_submission?.quiz_answers) {
+    const saved = asg.my_submission.quiz_answers;
+    for (const [qid, ansData] of Object.entries(saved)) {
+      quizAnswersState.value[qid] = ansData.student_answer || '';
+    }
+  } else if (asg.quiz_questions) {
+    asg.quiz_questions.forEach(q => {
+      quizAnswersState.value[q.id] = '';
+    });
+  }
+  showQuizTakerModal.value = true;
+};
+
+const submitStudentQuiz = async () => {
+  if (!activeQuizAssignment.value) return;
+  const questions = activeQuizAssignment.value.quiz_questions || [];
+  if (questions.length === 0) {
+    showNotice('Quiz Error', 'This quiz has no questions configured.', 'error');
+    return;
+  }
+
+  const answered = answeredQuizCount.value;
+  if (answered === 0) {
+    showNotice('Quiz Incomplete', 'Please answer at least one question before submitting your quiz.', 'warning');
+    return;
+  }
+
+  isSubmittingWork.value = true;
+  try {
+    const res = await api.submitLmsAssignment({
+      assignment_id: activeQuizAssignment.value.id,
+      quiz_answers: quizAnswersState.value
+    });
+    
+    showQuizTakerModal.value = false;
+    const secId = dashboardData.value.enrollment?.section_id;
+    if (secId && selectedLmsSubject.value) {
+      await loadStudentLmsContent(secId, selectedLmsSubject.value.subject_id);
+    }
+
+    if (res.data?.has_essay) {
+      showNotice(
+        'Quiz Submitted!',
+        `Your objective responses have been auto-graded: ${res.data.score} / ${res.data.max_score} pts. Your essay response(s) have been submitted to your teacher for manual evaluation.`,
+        'success'
+      );
+    } else {
+      showNotice(
+        'Quiz Auto-Graded!',
+        `Your online quiz has been evaluated: You scored ${res.data?.score ?? 0} out of ${res.data?.max_score ?? 0} points!`,
+        'success'
+      );
+    }
+  } catch (err) {
+    showNotice('Submission Error', 'Failed to submit quiz answers: ' + err.message, 'error');
   } finally {
     isSubmittingWork.value = false;
   }

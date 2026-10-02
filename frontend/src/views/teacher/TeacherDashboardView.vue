@@ -695,6 +695,10 @@
                   >
                     {{ asg.task_type }}
                   </span>
+                  <span v-if="asg.submission_format === 'quiz'" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-violet-50 text-violet-800 border border-violet-200 flex items-center space-x-1">
+                    <ListChecks class="w-3 h-3 text-violet-600" />
+                    <span>Interactive Quiz</span>
+                  </span>
                   <span class="text-xs font-mono font-bold text-slate-700">{{ asg.max_score }} Points Max</span>
                   <span class="text-slate-300">•</span>
                   <span class="text-xs text-slate-500">{{ asg.quarter }}</span>
@@ -1515,16 +1519,46 @@
     <!-- LMS MODAL 2: CREATE ASSIGNMENT TASK                      -->
     <!-- ======================================================== -->
     <div v-if="showCreateAssignmentModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-4 border border-slate-200">
+      <div class="bg-white rounded-3xl max-w-3xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-7 shadow-2xl space-y-4 border border-slate-200">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <div class="flex items-center space-x-2">
             <FileText class="w-5 h-5 text-emerald-600" />
-            <h3 class="font-bold text-slate-900 text-base">Create Assignment / Task</h3>
+            <h3 class="font-bold text-slate-900 text-base">Create Learning Task / Interactive Quiz</h3>
           </div>
           <button @click="showCreateAssignmentModal = false" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
         </div>
 
-        <form @submit.prevent="saveLmsAssignment()" class="space-y-3.5 text-xs">
+        <!-- Format Selector Toggle -->
+        <div class="bg-slate-100 p-1 rounded-2xl grid grid-cols-2 gap-1 text-xs font-bold">
+          <button 
+            type="button" 
+            @click="assignmentForm.submission_format = 'standard'"
+            :class="[
+              'py-2 px-3 rounded-xl transition flex items-center justify-center space-x-1.5 cursor-pointer',
+              assignmentForm.submission_format === 'standard' 
+                ? 'bg-white text-emerald-950 shadow-xs' 
+                : 'text-slate-600 hover:text-slate-900'
+            ]"
+          >
+            <FileText class="w-3.5 h-3.5 text-emerald-700" />
+            <span>Standard Turn-In (Document / File)</span>
+          </button>
+          <button 
+            type="button" 
+            @click="assignmentForm.submission_format = 'quiz'; if (!assignmentForm.quiz_questions || assignmentForm.quiz_questions.length === 0) addQuizQuestion('multiple_choice');"
+            :class="[
+              'py-2 px-3 rounded-xl transition flex items-center justify-center space-x-1.5 cursor-pointer',
+              assignmentForm.submission_format === 'quiz' 
+                ? 'bg-white text-emerald-950 shadow-xs' 
+                : 'text-slate-600 hover:text-slate-900'
+            ]"
+          >
+            <ListChecks class="w-3.5 h-3.5 text-emerald-700" />
+            <span>Interactive Online Quiz / Exam</span>
+          </button>
+        </div>
+
+        <form @submit.prevent="saveLmsAssignment()" class="space-y-4 text-xs">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="font-semibold text-slate-700 block mb-1">Target Quarter *</label>
@@ -1546,11 +1580,11 @@
           </div>
 
           <div>
-            <label class="font-semibold text-slate-700 block mb-1">Assignment Title *</label>
+            <label class="font-semibold text-slate-700 block mb-1">Assignment / Quiz Title *</label>
             <input 
               v-model="assignmentForm.title" 
               type="text" 
-              placeholder="e.g. Problem Set 1: Inverse Functions & Applications" 
+              :placeholder="assignmentForm.submission_format === 'quiz' ? 'e.g. Unit Quiz 1: Chemical Reactions & Stoichiometry' : 'e.g. Problem Set 1: Inverse Functions & Applications'" 
               required 
               class="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             />
@@ -1558,14 +1592,21 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="font-semibold text-slate-700 block mb-1">Maximum Score *</label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="font-semibold text-slate-700">Maximum Score *</label>
+                <span v-if="assignmentForm.submission_format === 'quiz'" class="text-[10px] text-emerald-700 font-bold">
+                  Auto-calculated from items
+                </span>
+              </div>
               <input 
                 v-model.number="assignmentForm.max_score" 
                 type="number" 
                 min="1" 
                 max="500" 
+                :readonly="assignmentForm.submission_format === 'quiz'"
                 required 
                 class="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                :class="{'bg-slate-100 text-slate-600': assignmentForm.submission_format === 'quiz'}"
               />
             </div>
             <div>
@@ -1583,11 +1624,191 @@
             <label class="font-semibold text-slate-700 block mb-1">Instructions / Guide *</label>
             <textarea 
               v-model="assignmentForm.instructions" 
-              rows="3" 
-              placeholder="Provide detailed instructions, rubric, or submission requirements..." 
+              rows="2" 
+              :placeholder="assignmentForm.submission_format === 'quiz' ? 'Provide directions for this quiz, e.g. answer all questions carefully...' : 'Provide detailed instructions, rubric, or submission requirements...'" 
               required 
               class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             ></textarea>
+          </div>
+
+          <!-- ========================================== -->
+          <!-- INTERACTIVE QUESTION BUILDER (QUIZ MODE)   -->
+          <!-- ========================================== -->
+          <div v-if="assignmentForm.submission_format === 'quiz'" class="p-4 bg-emerald-50/40 border border-emerald-200 rounded-2xl space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-200/80 pb-3">
+              <div>
+                <div class="flex items-center space-x-2">
+                  <h4 class="font-extrabold text-slate-900 text-sm">Question & Exam Builder</h4>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                    {{ assignmentForm.quiz_questions.length }} Items • {{ computedTotalQuizPoints }} Total Pts
+                  </span>
+                </div>
+                <p class="text-[11px] text-slate-500">Configure Multiple Choice, Identification, or Essay items with auto-grading.</p>
+              </div>
+
+              <!-- Add Question Buttons -->
+              <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                <button 
+                  type="button" 
+                  @click="addQuizQuestion('multiple_choice')" 
+                  class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-emerald-800 hover:bg-emerald-700 text-white shadow-2xs transition flex items-center space-x-1 cursor-pointer"
+                >
+                  <Plus class="w-3 h-3" />
+                  <span>+ Multiple Choice</span>
+                </button>
+                <button 
+                  type="button" 
+                  @click="addQuizQuestion('identification')" 
+                  class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100 shadow-2xs transition flex items-center space-x-1 cursor-pointer"
+                >
+                  <Plus class="w-3 h-3" />
+                  <span>+ Identification</span>
+                </button>
+                <button 
+                  type="button" 
+                  @click="addQuizQuestion('essay')" 
+                  class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-white border border-purple-300 text-purple-800 hover:bg-purple-100 shadow-2xs transition flex items-center space-x-1 cursor-pointer"
+                >
+                  <Plus class="w-3 h-3" />
+                  <span>+ Essay</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Empty State -->
+            <div v-if="!assignmentForm.quiz_questions || assignmentForm.quiz_questions.length === 0" class="py-8 text-center text-slate-400 text-xs">
+              No questions added yet. Click "+ Multiple Choice", "+ Identification", or "+ Essay" above.
+            </div>
+
+            <!-- Questions Items List -->
+            <div class="space-y-3.5 max-h-96 overflow-y-auto pr-1">
+              <div 
+                v-for="(q, qIdx) in assignmentForm.quiz_questions" 
+                :key="q.id"
+                class="p-4 bg-white border border-slate-200 rounded-2xl shadow-2xs space-y-3 relative group"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <span class="w-6 h-6 rounded-full bg-slate-900 text-white text-[11px] font-bold flex items-center justify-center font-mono">
+                      {{ qIdx + 1 }}
+                    </span>
+                    <span 
+                      class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                      :class="{
+                        'bg-blue-50 text-blue-800 border border-blue-200': q.type === 'multiple_choice',
+                        'bg-amber-50 text-amber-800 border border-amber-200': q.type === 'identification',
+                        'bg-purple-50 text-purple-800 border border-purple-200': q.type === 'essay'
+                      }"
+                    >
+                      {{ q.type === 'multiple_choice' ? 'Multiple Choice' : (q.type === 'identification' ? 'Identification' : 'Essay') }}
+                    </span>
+                  </div>
+
+                  <div class="flex items-center space-x-2">
+                    <div class="flex items-center space-x-1 text-slate-600 font-semibold text-[11px]">
+                      <span>Points:</span>
+                      <input 
+                        v-model.number="q.points" 
+                        type="number" 
+                        min="1" 
+                        max="100" 
+                        class="w-14 px-2 py-0.5 rounded-lg border border-slate-300 font-mono font-bold text-center text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                      />
+                    </div>
+                    <button 
+                      type="button" 
+                      @click="removeQuizQuestion(qIdx)" 
+                      class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                      title="Remove Question"
+                    >
+                      <Trash2 class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Prompt -->
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Question Prompt *</label>
+                  <textarea 
+                    v-model="q.question" 
+                    rows="2" 
+                    :placeholder="`Enter question #${qIdx + 1} prompt or instruction...`"
+                    required 
+                    class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  ></textarea>
+                </div>
+
+                <!-- 1. MULTIPLE CHOICE -->
+                <div v-if="q.type === 'multiple_choice'" class="space-y-2 pt-1 border-t border-slate-100">
+                  <div class="flex items-center justify-between">
+                    <label class="block font-semibold text-slate-700 text-[11px]">
+                      Choices & Answer Key <span class="text-slate-400 font-normal">(Click radio to set correct answer)</span>
+                    </label>
+                    <span class="text-[10px] text-emerald-700 font-semibold">Auto-graded</span>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div 
+                      v-for="(opt, optIdx) in q.options" 
+                      :key="optIdx"
+                      :class="[
+                        'flex items-center space-x-2 p-2 rounded-xl border transition',
+                        q.correct_answer === q.options[optIdx] 
+                          ? 'border-emerald-500 bg-emerald-50/70 text-emerald-950 font-semibold' 
+                          : 'border-slate-200 bg-slate-50/50'
+                      ]"
+                    >
+                      <input 
+                        type="radio" 
+                        :name="`q_correct_${q.id}`" 
+                        :value="q.options[optIdx]" 
+                        :checked="q.correct_answer === q.options[optIdx]"
+                        @change="q.correct_answer = q.options[optIdx]"
+                        class="text-emerald-600 focus:ring-emerald-500 shrink-0 cursor-pointer" 
+                      />
+                      <span class="font-mono font-bold text-slate-500 text-[11px] shrink-0">
+                        {{ ['A', 'B', 'C', 'D'][optIdx] || (optIdx + 1) }}.
+                      </span>
+                      <input 
+                        v-model="q.options[optIdx]" 
+                        type="text" 
+                        :placeholder="`Choice ${['A', 'B', 'C', 'D'][optIdx] || (optIdx + 1)}`"
+                        required
+                        class="w-full bg-transparent border-0 p-0 text-xs focus:ring-0 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. IDENTIFICATION -->
+                <div v-else-if="q.type === 'identification'" class="space-y-1.5 pt-1 border-t border-slate-100">
+                  <div class="flex items-center justify-between">
+                    <label class="block font-semibold text-slate-700 text-[11px]">Exact Answer Key *</label>
+                    <span class="text-[10px] text-emerald-700 font-semibold">Auto-graded (case-insensitive & trimmed)</span>
+                  </div>
+                  <input 
+                    v-model="q.correct_answer" 
+                    type="text" 
+                    placeholder="e.g. Mitochondria, Photosynthesis, Douglas MacArthur..."
+                    required 
+                    class="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-emerald-50/30 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                </div>
+
+                <!-- 3. ESSAY -->
+                <div v-else-if="q.type === 'essay'" class="space-y-1.5 pt-1 border-t border-slate-100">
+                  <div class="flex items-center justify-between">
+                    <label class="block font-semibold text-slate-700 text-[11px]">Teacher Scoring Guide / Rubric (Optional)</label>
+                    <span class="text-[10px] text-purple-700 font-semibold">Manual Teacher Grading</span>
+                  </div>
+                  <textarea 
+                    v-model="q.rubric_guide" 
+                    rows="2" 
+                    placeholder="Guidelines or key concepts the student should include in their essay response..." 
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  ></textarea>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Multi-Section Collective Distribution -->
@@ -1665,7 +1886,7 @@
               class="px-5 py-2 rounded-xl text-xs font-semibold bg-emerald-800 hover:bg-emerald-700 disabled:opacity-50 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer"
             >
               <Check class="w-3.5 h-3.5" />
-              <span>{{ isLoadingLms ? 'Publishing...' : 'Publish Task' }}</span>
+              <span>{{ isLoadingLms ? 'Publishing...' : (assignmentForm.submission_format === 'quiz' ? 'Publish Quiz' : 'Publish Task') }}</span>
             </button>
           </div>
         </form>
@@ -1745,7 +1966,22 @@
                 </td>
 
                 <td class="py-3 px-3 max-w-xs">
-                  <div v-if="s.submission_file" class="flex items-center space-x-1.5">
+                  <!-- Quiz submission inspector button -->
+                  <div v-if="s.quiz_answers" class="space-y-1">
+                    <button 
+                      type="button" 
+                      @click="openQuizInspectionModal(activeGradingAssignment, s)"
+                      class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-violet-50 hover:bg-violet-100 text-violet-800 border border-violet-200 shadow-2xs transition flex items-center space-x-1 cursor-pointer"
+                    >
+                      <ListChecks class="w-3 h-3 text-violet-700" />
+                      <span>Review Quiz ({{ s.auto_graded_score !== null ? s.auto_graded_score : '--' }} pts)</span>
+                    </button>
+                    <div class="text-[10px] text-slate-400">
+                      {{ Object.keys(s.quiz_answers).length }} questions evaluated
+                    </div>
+                  </div>
+
+                  <div v-else-if="s.submission_file" class="flex items-center space-x-1.5">
                     <a 
                       :href="getFileUrl(s.submission_file)" 
                       target="_blank" 
@@ -1756,10 +1992,10 @@
                       <span class="truncate max-w-[120px]">Download File</span>
                     </a>
                   </div>
-                  <div v-if="s.submission_text" class="text-[11px] text-slate-600 italic line-clamp-2 mt-0.5">
+                  <div v-if="!s.quiz_answers && s.submission_text" class="text-[11px] text-slate-600 italic line-clamp-2 mt-0.5">
                     "{{ s.submission_text }}"
                   </div>
-                  <span v-if="!s.submission_file && !s.submission_text" class="text-slate-400 text-[11px]">
+                  <span v-if="!s.quiz_answers && !s.submission_file && !s.submission_text" class="text-slate-400 text-[11px]">
                     No submission
                   </span>
                 </td>
@@ -1806,6 +2042,124 @@
             class="px-5 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
           >
             Close Submissions Desk
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- LMS MODAL 4: INSPECT STUDENT QUIZ SUBMISSION              -->
+    <!-- ======================================================== -->
+    <div v-if="quizInspectionModal.isOpen" class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col p-6 shadow-2xl space-y-4 border border-slate-200">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-violet-50 text-violet-800 border border-violet-200">
+                Interactive Quiz Responses
+              </span>
+              <h3 class="font-bold text-slate-900 text-base">
+                {{ quizInspectionModal.submission?.last_name }}, {{ quizInspectionModal.submission?.first_name }}
+              </h3>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">
+              {{ quizInspectionModal.assignment?.title }} • Auto-Graded Score: 
+              <strong class="text-emerald-700 font-mono">{{ quizInspectionModal.submission?.auto_graded_score ?? '--' }} / {{ quizInspectionModal.assignment?.max_score }} Pts</strong>
+            </p>
+          </div>
+          <button @click="quizInspectionModal.isOpen = false" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
+        </div>
+
+        <!-- Questions & Student Answers List -->
+        <div class="overflow-y-auto flex-1 space-y-3.5 pr-1 text-xs">
+          <div 
+            v-for="(ans, qid, idx) in quizInspectionModal.submission?.quiz_answers" 
+            :key="qid"
+            class="p-4 rounded-2xl border space-y-2.5"
+            :class="[
+              ans.type === 'essay' 
+                ? 'border-purple-200 bg-purple-50/20' 
+                : (ans.is_correct ? 'border-emerald-200 bg-emerald-50/20' : 'border-rose-200 bg-rose-50/20')
+            ]"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="font-bold text-slate-900">#{{ idx + 1 }}.</span>
+                <span 
+                  class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                  :class="{
+                    'bg-blue-50 text-blue-800 border border-blue-200': ans.type === 'multiple_choice',
+                    'bg-amber-50 text-amber-800 border border-amber-200': ans.type === 'identification',
+                    'bg-purple-50 text-purple-800 border border-purple-200': ans.type === 'essay'
+                  }"
+                >
+                  {{ ans.type === 'multiple_choice' ? 'Multiple Choice' : (ans.type === 'identification' ? 'Identification' : 'Essay') }}
+                </span>
+              </div>
+
+              <!-- Score / Correctness Badge -->
+              <div>
+                <span 
+                  v-if="ans.type !== 'essay'"
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                  :class="ans.is_correct ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
+                >
+                  {{ ans.is_correct ? `✓ Correct (+${ans.points_earned} pts)` : `✕ Incorrect (0 / ${ans.points_possible} pts)` }}
+                </span>
+                <span 
+                  v-else 
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800"
+                >
+                  Essay (Max {{ ans.points_possible }} pts)
+                </span>
+              </div>
+            </div>
+
+            <p class="font-semibold text-slate-900 text-xs">{{ ans.question }}</p>
+
+            <!-- Student Answer Display -->
+            <div class="p-2.5 rounded-xl bg-white border border-slate-200 space-y-1">
+              <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Learner's Submitted Answer:</div>
+              <div class="font-medium text-slate-800 text-xs whitespace-pre-wrap">
+                {{ ans.student_answer || '(No answer provided)' }}
+              </div>
+            </div>
+
+            <!-- Correct Answer Key Display for Teacher -->
+            <div v-if="ans.type !== 'essay'" class="text-[11px] text-emerald-800 font-medium flex items-center space-x-1">
+              <span>Correct Key:</span>
+              <strong class="font-bold underline">{{ ans.correct_answer }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Grade Adjust & Close Footer -->
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-between shrink-0">
+          <div class="flex items-center space-x-2">
+            <label class="font-bold text-slate-700 text-xs">Total Score:</label>
+            <input 
+              v-model.number="quizInspectionModal.submission.score" 
+              type="number" 
+              min="0" 
+              :max="quizInspectionModal.assignment?.max_score" 
+              step="0.5" 
+              class="w-20 px-2 py-1 rounded-lg border border-slate-300 font-mono font-bold text-center text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            />
+            <button 
+              type="button" 
+              @click="saveGradeForSubmission(quizInspectionModal.submission)" 
+              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-600 text-white shadow-2xs transition cursor-pointer"
+            >
+              Save Grade
+            </button>
+          </div>
+
+          <button 
+            type="button" 
+            @click="quizInspectionModal.isOpen = false" 
+            class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+          >
+            Close
           </button>
         </div>
       </div>
@@ -1862,7 +2216,7 @@ import {
   FileSpreadsheet, CheckCircle, Search, Check, RefreshCw, 
   Sparkles, AlertCircle, AlertTriangle, UploadCloud, FileText, CheckCircle2,
   MessageSquare, Paperclip, ExternalLink, Trash2, Pin, Clock3,
-  Send, Plus, Download, Eye, Layers, Lock
+  Send, Plus, Download, Eye, Layers, Lock, ListChecks, HelpCircle, XCircle
 } from 'lucide-vue-next';
 import api, { getFileUrl } from '../../services/api';
 
@@ -2342,8 +2696,73 @@ const assignmentForm = ref({
   title: '',
   instructions: '',
   task_type: 'Written Work',
+  submission_format: 'standard', // 'standard' | 'quiz'
   max_score: 50,
-  due_date: ''
+  due_date: '',
+  quiz_questions: []
+});
+
+const quizInspectionModal = ref({
+  isOpen: false,
+  assignment: null,
+  submission: null
+});
+
+const openQuizInspectionModal = (assignment, submission) => {
+  quizInspectionModal.value = {
+    isOpen: true,
+    assignment,
+    submission
+  };
+};
+
+const addQuizQuestion = (type) => {
+  const newId = 'q_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+  if (!assignmentForm.value.quiz_questions) {
+    assignmentForm.value.quiz_questions = [];
+  }
+  if (type === 'multiple_choice') {
+    assignmentForm.value.quiz_questions.push({
+      id: newId,
+      type: 'multiple_choice',
+      question: '',
+      points: 1,
+      options: ['Option A', 'Option B', 'Option C', 'Option D'],
+      correct_answer: 'Option A'
+    });
+  } else if (type === 'identification') {
+    assignmentForm.value.quiz_questions.push({
+      id: newId,
+      type: 'identification',
+      question: '',
+      points: 1,
+      correct_answer: ''
+    });
+  } else if (type === 'essay') {
+    assignmentForm.value.quiz_questions.push({
+      id: newId,
+      type: 'essay',
+      question: '',
+      points: 5,
+      rubric_guide: ''
+    });
+  }
+};
+
+const removeQuizQuestion = (index) => {
+  assignmentForm.value.quiz_questions.splice(index, 1);
+};
+
+const computedTotalQuizPoints = computed(() => {
+  if (assignmentForm.value.submission_format !== 'quiz') return assignmentForm.value.max_score || 50;
+  if (!assignmentForm.value.quiz_questions || assignmentForm.value.quiz_questions.length === 0) return 0;
+  return assignmentForm.value.quiz_questions.reduce((sum, q) => sum + (Number(q.points) || 1), 0);
+});
+
+watch(computedTotalQuizPoints, (newTotal) => {
+  if (assignmentForm.value.submission_format === 'quiz' && newTotal > 0) {
+    assignmentForm.value.max_score = newTotal;
+  }
 });
 
 const activeGradingAssignment = ref(null);
@@ -2471,6 +2890,37 @@ const saveLmsAssignment = async () => {
     return;
   }
 
+  // Quiz-specific validation
+  if (assignmentForm.value.submission_format === 'quiz') {
+    const questions = assignmentForm.value.quiz_questions || [];
+    if (questions.length === 0) {
+      errorMessage.value = 'Please add at least one question to the interactive quiz.';
+      return;
+    }
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      if (!q.question || !q.question.trim()) {
+        errorMessage.value = `Question #${i + 1} is missing a question prompt.`;
+        return;
+      }
+      if (q.type === 'multiple_choice') {
+        if (!q.options || q.options.some(opt => !opt || !opt.trim())) {
+          errorMessage.value = `Question #${i + 1} (Multiple Choice) has empty choices.`;
+          return;
+        }
+        if (!q.correct_answer || !q.correct_answer.trim()) {
+          errorMessage.value = `Please designate the correct answer key for Question #${i + 1}.`;
+          return;
+        }
+      } else if (q.type === 'identification') {
+        if (!q.correct_answer || !q.correct_answer.trim()) {
+          errorMessage.value = `Please provide the answer key for Question #${i + 1} (Identification).`;
+          return;
+        }
+      }
+    }
+  }
+
   isLoadingLms.value = true;
   try {
     const res = await api.saveLmsAssignment({
@@ -2481,7 +2931,16 @@ const saveLmsAssignment = async () => {
     });
     feedbackMessage.value = res.message || 'Assignment published to class.';
     showCreateAssignmentModal.value = false;
-    assignmentForm.value = { quarter: '1st Quarter', title: '', instructions: '', task_type: 'Written Work', max_score: 50, due_date: '' };
+    assignmentForm.value = { 
+      quarter: '1st Quarter', 
+      title: '', 
+      instructions: '', 
+      task_type: 'Written Work', 
+      submission_format: 'standard',
+      max_score: 50, 
+      due_date: '',
+      quiz_questions: []
+    };
     resetDistributionTargets();
     await loadLmsContent();
     setTimeout(() => { feedbackMessage.value = ''; }, 3500);

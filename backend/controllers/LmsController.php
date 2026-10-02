@@ -15,6 +15,7 @@ class LmsController {
     public function getClassContent(): void {
         $user = Auth::requireAuth();
         $db = Database::getConnection();
+        $this->ensureQuizSchema($db);
 
         $sectionId = (int)($_GET['section_id'] ?? 0);
         $subjectId = (int)($_GET['subject_id'] ?? 0);
@@ -114,6 +115,29 @@ class LmsController {
         $asgStmt->execute(['sec_id' => $sectionId, 'sub_id' => $subjectId]);
         $assignments = $asgStmt->fetchAll();
 
+        // Process quiz questions and security sanitization for students
+        foreach ($assignments as &$asg) {
+            $asg['submission_format'] = $asg['submission_format'] ?? 'standard';
+            if (!empty($asg['quiz_questions'])) {
+                $parsed = json_decode($asg['quiz_questions'], true);
+                if (is_array($parsed)) {
+                    if ($user['role_slug'] === 'student') {
+                        // Strip correct answer key from student payload to prevent devtools inspection!
+                        foreach ($parsed as &$q) {
+                            unset($q['correct_answer']);
+                        }
+                        unset($q);
+                    }
+                    $asg['quiz_questions'] = $parsed;
+                } else {
+                    $asg['quiz_questions'] = [];
+                }
+            } else {
+                $asg['quiz_questions'] = [];
+            }
+        }
+        unset($asg);
+
         // If user is a student, attach their own submission to each assignment
         if ($user['role_slug'] === 'student') {
             $subStmt = $db->prepare("
@@ -123,7 +147,15 @@ class LmsController {
             ");
             foreach ($assignments as &$a) {
                 $subStmt->execute(['sid' => $user['id'], 'asg_id' => $a['id']]);
-                $a['my_submission'] = $subStmt->fetch() ?: null;
+                $mySub = $subStmt->fetch();
+                if ($mySub) {
+                    if (!empty($mySub['quiz_answers'])) {
+                        $mySub['quiz_answers'] = json_decode($mySub['quiz_answers'], true) ?: [];
+                    }
+                    $a['my_submission'] = $mySub;
+                } else {
+                    $a['my_submission'] = null;
+                }
             }
             unset($a);
         }
@@ -466,22 +498,49 @@ class LmsController {
         $title = trim($input['title'] ?? '');
         $instructions = trim($input['instructions'] ?? '');
         $taskType = trim($input['task_type'] ?? 'Written Work');
+        $submissionFormat = trim($input['submission_format'] ?? 'standard');
         $maxScore = (int)($input['max_score'] ?? 50);
         $dueDate = trim($input['due_date'] ?? '');
         $targetSections = $input['target_sections'] ?? null;
+        $quizQuestions = $input['quiz_questions'] ?? null;
 
         if (!$sectionId || !$subjectId || !$title || !$dueDate) {
             Response::error('Section, subject, title, and due date are required.');
         }
 
+        $quizJson = null;
+        if ($submissionFormat === 'quiz') {
+            $decoded = is_string($quizQuestions) ? json_decode($quizQuestions, true) : (is_array($quizQuestions) ? $quizQuestions : []);
+            if (empty($decoded)) {
+                Response::error('Please create at least one question (Multiple Choice, Identification, or Essay) for the interactive quiz.');
+            }
+
+            // Auto-calculate maximum score from question points and normalize question IDs
+            $computedMaxScore = 0;
+            foreach ($decoded as $idx => &$q) {
+                if (empty($q['id'])) {
+                    $q['id'] = 'q_' . ($idx + 1) . '_' . bin2hex(random_bytes(3));
+                }
+                $pts = max(1, (int)($q['points'] ?? 1));
+                $q['points'] = $pts;
+                $computedMaxScore += $pts;
+            }
+            unset($q);
+
+            $maxScore = $computedMaxScore;
+            $quizJson = json_encode($decoded);
+        }
+
         $db = Database::getConnection();
+        $this->ensureQuizSchema($db);
         $this->checkShsSemesterActive($db, $subjectId);
 
         if ($id > 0) {
             $stmt = $db->prepare("
                 UPDATE lms_assignments 
                 SET quarter = :quarter, title = :title, instructions = :inst, 
-                    task_type = :ttype, max_score = :max_score, due_date = :due 
+                    task_type = :ttype, submission_format = :sformat, quiz_questions = :qquestions,
+                    max_score = :max_score, due_date = :due 
                 WHERE id = :id
             ");
             $stmt->execute([
@@ -489,6 +548,8 @@ class LmsController {
                 'title'     => $title,
                 'inst'      => $instructions,
                 'ttype'     => $taskType,
+                'sformat'   => $submissionFormat,
+                'qquestions'=> $quizJson,
                 'max_score' => $maxScore,
                 'due'       => $dueDate,
                 'id'        => $id
@@ -501,8 +562,8 @@ class LmsController {
                 Response::error('Cannot create assignment: all selected class sections belong to an inactive semester.', 403);
             }
             $stmt = $db->prepare("
-                INSERT INTO lms_assignments (section_id, subject_id, teacher_id, quarter, title, instructions, task_type, max_score, due_date, created_at)
-                VALUES (:sec_id, :sub_id, :tid, :quarter, :title, :inst, :ttype, :max_score, :due, NOW())
+                INSERT INTO lms_assignments (section_id, subject_id, teacher_id, quarter, title, instructions, task_type, submission_format, quiz_questions, max_score, due_date, created_at)
+                VALUES (:sec_id, :sub_id, :tid, :quarter, :title, :inst, :ttype, :sformat, :qquestions, :max_score, :due, NOW())
             ");
             $count = 0;
             $firstId = 0;
@@ -515,6 +576,8 @@ class LmsController {
                     'title'     => $title,
                     'inst'      => $instructions,
                     'ttype'     => $taskType,
+                    'sformat'   => $submissionFormat,
+                    'qquestions'=> $quizJson,
                     'max_score' => $maxScore,
                     'due'       => $dueDate
                 ]);
@@ -524,8 +587,8 @@ class LmsController {
                 $count++;
             }
             $msg = $count > 1 
-                ? "Assignment task published to {$count} class sections." 
-                : "Assignment published to class.";
+                ? ($submissionFormat === 'quiz' ? "Interactive quiz published to {$count} class sections." : "Assignment task published to {$count} class sections.")
+                : ($submissionFormat === 'quiz' ? "Interactive online quiz published successfully." : "Assignment published to class.");
             Response::success($msg, ['id' => $firstId, 'count' => $count]);
         }
     }
@@ -609,8 +672,92 @@ class LmsController {
         $isLate = (strtotime(date('Y-m-d H:i:s')) > strtotime($assignment['due_date']));
         $status = $isLate ? 'Late' : 'Submitted';
 
+        $isQuiz = ($assignment['submission_format'] ?? 'standard') === 'quiz';
+        $quizAnswersJson = null;
+        $autoGradedScore = null;
+        $evalBreakdown = null;
+        $score = null;
+        $teacherFeedback = null;
+        $hasEssay = false;
+
+        if ($isQuiz) {
+            $studentAnswers = $input['quiz_answers'] ?? [];
+            if (is_string($studentAnswers)) {
+                $studentAnswers = json_decode($studentAnswers, true) ?: [];
+            }
+            if (!is_array($studentAnswers)) {
+                $studentAnswers = [];
+            }
+
+            $origQuestions = !empty($assignment['quiz_questions']) 
+                ? (json_decode($assignment['quiz_questions'], true) ?: []) 
+                : [];
+
+            if (empty($origQuestions)) {
+                Response::error('This quiz has no registered questions.', 400);
+            }
+
+            $autoGradedScore = 0;
+            $evalBreakdown = [];
+
+            foreach ($origQuestions as $q) {
+                $qid = $q['id'];
+                $type = $q['type'] ?? 'multiple_choice';
+                $pts = (int)($q['points'] ?? 1);
+                $studentAnswer = trim((string)($studentAnswers[$qid] ?? ''));
+                $isCorrect = false;
+                $earnedPts = 0;
+
+                if ($type === 'multiple_choice') {
+                    $correctAnswer = trim((string)($q['correct_answer'] ?? ''));
+                    if ($studentAnswer !== '' && strcasecmp($studentAnswer, $correctAnswer) === 0) {
+                        $isCorrect = true;
+                        $earnedPts = $pts;
+                        $autoGradedScore += $pts;
+                    }
+                } elseif ($type === 'identification') {
+                    $correctAnswer = trim((string)($q['correct_answer'] ?? ''));
+                    $normStudent = preg_replace('/[^\p{L}\p{N}]/u', '', mb_strtolower($studentAnswer));
+                    $normCorrect = preg_replace('/[^\p{L}\p{N}]/u', '', mb_strtolower($correctAnswer));
+                    if ($normStudent !== '' && $normStudent === $normCorrect) {
+                        $isCorrect = true;
+                        $earnedPts = $pts;
+                        $autoGradedScore += $pts;
+                    }
+                } elseif ($type === 'essay') {
+                    $hasEssay = true;
+                    $earnedPts = null; // Pending teacher evaluation
+                }
+
+                $evalBreakdown[$qid] = [
+                    'question'        => $q['question'] ?? '',
+                    'type'            => $type,
+                    'options'         => $q['options'] ?? [],
+                    'student_answer'  => $studentAnswer,
+                    'correct_answer'  => ($type !== 'essay' ? ($q['correct_answer'] ?? '') : null),
+                    'points_possible' => $pts,
+                    'points_earned'   => $earnedPts,
+                    'is_correct'      => $isCorrect
+                ];
+            }
+
+            $quizAnswersJson = json_encode($evalBreakdown);
+            
+            if (!$hasEssay) {
+                $status = 'Graded';
+                $score = $autoGradedScore;
+                $teacherFeedback = "Auto-graded online quiz: {$autoGradedScore} / {$assignment['max_score']} pts.";
+            } else {
+                $status = $isLate ? 'Late' : 'Submitted';
+                $score = $autoGradedScore; // Partial score for objective items
+                $teacherFeedback = "Objective items auto-graded: {$autoGradedScore} pts. Essay answer(s) submitted for teacher evaluation.";
+            }
+
+            $submissionText = "Submitted online interactive quiz ({$assignment['title']})";
+        }
+
         $filePath = null;
-        if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
+        if (!$isQuiz && isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
             $file = $_FILES['file'];
             $maxBytes = 15 * 1024 * 1024; // 15MB
             if ($file['size'] > $maxBytes) {
@@ -655,34 +802,58 @@ class LmsController {
                 UPDATE lms_submissions 
                 SET submission_file = COALESCE(:fpath, submission_file),
                     submission_text = :stext,
+                    quiz_answers = COALESCE(:qanswers, quiz_answers),
+                    auto_graded_score = COALESCE(:ascore, auto_graded_score),
+                    score = COALESCE(:score, score),
+                    teacher_feedback = COALESCE(:feedback, teacher_feedback),
                     status = :status,
                     submitted_at = NOW()
                 WHERE id = :id
             ");
             $updateStmt->execute([
-                'fpath' => $filePath,
-                'stext' => $submissionText,
-                'status'=> $status,
-                'id'    => $existing['id']
+                'fpath'    => $filePath,
+                'stext'    => $submissionText,
+                'qanswers' => $quizAnswersJson,
+                'ascore'   => $autoGradedScore,
+                'score'    => $score,
+                'feedback' => $teacherFeedback,
+                'status'   => $status,
+                'id'       => $existing['id']
             ]);
-            Response::success('Submission updated successfully');
+            Response::success($isQuiz ? 'Quiz answers submitted and graded successfully!' : 'Submission updated successfully', [
+                'is_quiz'        => $isQuiz,
+                'score'          => $score,
+                'max_score'      => $assignment['max_score'],
+                'has_essay'      => $hasEssay,
+                'eval_breakdown' => $evalBreakdown
+            ]);
         } else {
-            if (!$filePath && !$submissionText) {
+            if (!$isQuiz && !$filePath && !$submissionText) {
                 Response::error('Please upload a file or write a response before submitting.');
             }
 
             $insertStmt = $db->prepare("
-                INSERT INTO lms_submissions (assignment_id, student_id, submission_file, submission_text, status, submitted_at)
-                VALUES (:asg_id, :sid, :fpath, :stext, :status, NOW())
+                INSERT INTO lms_submissions (assignment_id, student_id, submission_file, submission_text, quiz_answers, auto_graded_score, score, teacher_feedback, status, submitted_at)
+                VALUES (:asg_id, :sid, :fpath, :stext, :qanswers, :ascore, :score, :feedback, :status, NOW())
             ");
             $insertStmt->execute([
-                'asg_id' => $assignmentId,
-                'sid'    => $user['id'],
-                'fpath'  => $filePath,
-                'stext'  => $submissionText,
-                'status' => $status
+                'asg_id'   => $assignmentId,
+                'sid'      => $user['id'],
+                'fpath'    => $filePath,
+                'stext'    => $submissionText,
+                'qanswers' => $quizAnswersJson,
+                'ascore'   => $autoGradedScore,
+                'score'    => $score,
+                'feedback' => $teacherFeedback,
+                'status'   => $status
             ]);
-            Response::success('Assignment submitted successfully');
+            Response::success($isQuiz ? 'Quiz answers submitted and graded successfully!' : 'Assignment submitted successfully', [
+                'is_quiz'        => $isQuiz,
+                'score'          => $score,
+                'max_score'      => $assignment['max_score'],
+                'has_essay'      => $hasEssay,
+                'eval_breakdown' => $evalBreakdown
+            ]);
         }
     }
 
@@ -718,6 +889,7 @@ class LmsController {
             SELECT u.id as student_id, u.student_id as official_student_no,
                    p.first_name, p.last_name, p.middle_name, p.gender,
                    sub.id as submission_id, sub.submission_file, sub.submission_text,
+                   sub.quiz_answers, sub.auto_graded_score,
                    sub.score, sub.teacher_feedback, sub.status as submission_status,
                    sub.submitted_at, sub.graded_at
             FROM enrollments e
@@ -729,6 +901,21 @@ class LmsController {
         ");
         $studStmt->execute(['asg_id' => $assignmentId, 'sec_id' => $assignment['section_id']]);
         $students = $studStmt->fetchAll();
+
+        foreach ($students as &$s) {
+            if (!empty($s['quiz_answers'])) {
+                $s['quiz_answers'] = json_decode($s['quiz_answers'], true) ?: [];
+            } else {
+                $s['quiz_answers'] = null;
+            }
+        }
+        unset($s);
+
+        if (!empty($assignment['quiz_questions'])) {
+            $assignment['quiz_questions'] = json_decode($assignment['quiz_questions'], true) ?: [];
+        } else {
+            $assignment['quiz_questions'] = [];
+        }
 
         Response::success('Submissions retrieved', [
             'assignment' => $assignment,
@@ -767,5 +954,31 @@ class LmsController {
         ]);
 
         Response::success('Submission graded successfully');
+    }
+
+    /**
+     * Self-migrating database schema helper for online hosting (InfinityFree / MySQL)
+     */
+    private function ensureQuizSchema(PDO $db): void {
+        try {
+            $c1 = $db->query("SHOW COLUMNS FROM lms_assignments LIKE 'submission_format'")->fetch();
+            if (!$c1) {
+                $db->exec("ALTER TABLE lms_assignments ADD COLUMN submission_format ENUM('standard', 'quiz') NOT NULL DEFAULT 'standard' AFTER task_type");
+            }
+            $c2 = $db->query("SHOW COLUMNS FROM lms_assignments LIKE 'quiz_questions'")->fetch();
+            if (!$c2) {
+                $db->exec("ALTER TABLE lms_assignments ADD COLUMN quiz_questions LONGTEXT NULL AFTER submission_format");
+            }
+            $c3 = $db->query("SHOW COLUMNS FROM lms_submissions LIKE 'quiz_answers'")->fetch();
+            if (!$c3) {
+                $db->exec("ALTER TABLE lms_submissions ADD COLUMN quiz_answers LONGTEXT NULL AFTER submission_text");
+            }
+            $c4 = $db->query("SHOW COLUMNS FROM lms_submissions LIKE 'auto_graded_score'")->fetch();
+            if (!$c4) {
+                $db->exec("ALTER TABLE lms_submissions ADD COLUMN auto_graded_score DECIMAL(5,2) NULL AFTER quiz_answers");
+            }
+        } catch (\Exception $e) {
+            error_log("[LMS-Quiz] Schema ensure error: " . $e->getMessage());
+        }
     }
 }
