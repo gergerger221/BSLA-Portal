@@ -36,7 +36,7 @@ if ($corsRaw === '*' || in_array('*', $allowedOrigins, true)) {
     header('Access-Control-Allow-Origin: *');
 }
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Auth-Token, X-Authorization, X-Requested-With');
 header('Content-Type: application/json; charset=utf-8');
 
 // --- Security Headers (VULN-05 fix) ---

@@ -35,6 +35,8 @@ export async function apiRequest(endpoint, options = {}) {
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+    headers['X-Auth-Token'] = token;
+    headers['X-Authorization'] = `Bearer ${token}`;
   }
 
   // If payload is FormData (file uploads), do NOT manually set Content-Type

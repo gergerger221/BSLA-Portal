@@ -36,5 +36,27 @@ Options -Indexes
 # Block hidden files and directories (like .git, .env, .agents)
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  RewriteBase /
+
+  # Pass Authorization and X-Auth-Token headers to PHP FastCGI
+  SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+  SetEnvIf X-Auth-Token "(.*)" HTTP_X_AUTH_TOKEN=$1
+  SetEnvIf X-Authorization "(.*)" HTTP_X_AUTHORIZATION=$1
+  RewriteCond %{HTTP:Authorization} .
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+  RewriteCond %{HTTP:X-Auth-Token} .
+  RewriteRule .* - [E=HTTP_X_AUTH_TOKEN:%{HTTP:X-Auth-Token}]
+
   RewriteRule ^\.(git|agents|vscode|env) - [F,L]
+
+  # Allow direct access to backend and static assets
+  RewriteRule ^backend/ - [L]
+
+  # If requested file or directory exists, serve it directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Fallback to index.html for SPA routing
+  RewriteRule ^ index.html [L]
 </IfModule>

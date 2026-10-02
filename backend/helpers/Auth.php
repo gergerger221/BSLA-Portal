@@ -29,34 +29,70 @@ class Auth {
      * (VULN-07 fix: checks token expiry)
      */
     public static function user(): ?array {
-        $authHeader = '';
-        if (function_exists('getallheaders')) {
-            $headers = getallheaders();
-            $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+        $token = self::extractBearerToken();
+        if (!$token) {
+            return null;
         }
-        if (!$authHeader && isset($_SERVER['HTTP_AUTHORIZATION'])) {
-            $authHeader = $_SERVER['HTTP_AUTHORIZATION'];
-        }
-        // VULN-08 fix: REMOVED the $_GET['token'] fallback — tokens must only come via Authorization header
 
-        if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-            $token = $matches[1];
-            $db = Database::getConnection();
-            $stmt = $db->prepare("
-                SELECT u.id, u.role_id, u.username, u.email, u.student_id, u.status,
-                       r.name as role_name, r.slug as role_slug,
-                       p.first_name, p.middle_name, p.last_name, p.suffix, p.gender, p.contact_number
-                FROM users u
-                JOIN roles r ON u.role_id = r.id
-                LEFT JOIN user_profiles p ON u.id = p.user_id
-                WHERE u.remember_token = :token 
-                  AND u.status = 'Active'
-                  AND (u.token_expires_at IS NULL OR u.token_expires_at > NOW())
-                LIMIT 1
-            ");
-            $stmt->execute(['token' => $token]);
-            $user = $stmt->fetch();
-            return $user ?: null;
+        $db = Database::getConnection();
+        $stmt = $db->prepare("
+            SELECT u.id, u.role_id, u.username, u.email, u.student_id, u.status,
+                   r.name as role_name, r.slug as role_slug,
+                   p.first_name, p.middle_name, p.last_name, p.suffix, p.gender, p.contact_number
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            LEFT JOIN user_profiles p ON u.id = p.user_id
+            WHERE u.remember_token = :token 
+              AND u.status = 'Active'
+              AND (u.token_expires_at IS NULL OR u.token_expires_at > NOW())
+            LIMIT 1
+        ");
+        $stmt->execute(['token' => $token]);
+        $user = $stmt->fetch();
+        return $user ?: null;
+    }
+
+    /**
+     * Extracts token from all possible standard, FastCGI, and custom request headers.
+     */
+    public static function extractBearerToken(): ?string {
+        $candidateHeaders = [];
+
+        if (function_exists('getallheaders')) {
+            $candidateHeaders = array_merge($candidateHeaders, getallheaders() ?: []);
+        }
+        if (function_exists('apache_request_headers')) {
+            $candidateHeaders = array_merge($candidateHeaders, apache_request_headers() ?: []);
+        }
+
+        // Case-insensitive header lookups
+        $headerMap = [];
+        foreach ($candidateHeaders as $k => $v) {
+            $headerMap[strtolower($k)] = $v;
+        }
+
+        $rawToken = $headerMap['authorization'] 
+            ?? $headerMap['x-auth-token'] 
+            ?? $headerMap['x-authorization']
+            ?? $_SERVER['HTTP_AUTHORIZATION']
+            ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+            ?? $_SERVER['HTTP_X_AUTH_TOKEN']
+            ?? $_SERVER['HTTP_X_AUTHORIZATION']
+            ?? '';
+
+        if (empty($rawToken)) {
+            return null;
+        }
+
+        // Check if prefixed with "Bearer "
+        if (preg_match('/Bearer\s+(\S+)/i', $rawToken, $matches)) {
+            return trim($matches[1]);
+        }
+
+        // Raw hex token format check (64 hex characters or valid non-space token string)
+        $clean = trim($rawToken);
+        if (!empty($clean) && !str_contains($clean, ' ')) {
+            return $clean;
         }
 
         return null;

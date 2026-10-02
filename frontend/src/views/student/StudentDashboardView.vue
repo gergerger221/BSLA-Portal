@@ -3,15 +3,15 @@
     <!-- TOP WELCOME & SECTION BADGE HEADER -->
     <div class="no-print bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-2xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
       <div>
-        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold uppercase tracking-wider mb-2.5">
-          <Sparkles class="w-3.5 h-3.5 text-emerald-600" />
+        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-50 text-blue-900 border border-blue-200 text-xs font-semibold uppercase tracking-wider mb-2.5">
+          <Sparkles class="w-3.5 h-3.5 text-blue-700" />
           <span>Student Portal • {{ dashboardData.enrollment?.school_year_name || 'SY 2026-2027' }}</span>
         </div>
         <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
           Welcome, {{ studentDisplayName }}!
         </h1>
         <p class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-2">
-          <span>Student ID: <strong class="text-emerald-700 font-mono font-bold">{{ studentDisplayId }}</strong></span>
+          <span>Student ID: <strong class="text-blue-900 font-mono font-bold">{{ studentDisplayId }}</strong></span>
           <span class="text-slate-300">•</span>
           <span>LRN: <strong class="text-slate-700 font-mono">{{ studentDisplayLrn }}</strong></span>
           <span v-if="dashboardData.enrollment?.enrollment_no" class="text-slate-300">•</span>
@@ -22,13 +22,13 @@
       <!-- ASSIGNED SECTION & CLASSROOM BADGE -->
       <div class="text-left md:text-right bg-slate-50 p-4 sm:p-4.5 rounded-xl border border-slate-200 w-full md:w-auto min-w-0 md:min-w-[240px] shrink-0">
         <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5 flex items-center md:justify-end space-x-1">
-          <Layers class="w-3.5 h-3.5 text-emerald-600" />
+          <Layers class="w-3.5 h-3.5 text-blue-700" />
           <span>Assigned Class Section</span>
         </div>
         <div class="text-base font-bold text-slate-900">
           {{ dashboardData.enrollment?.section_name || 'Class Section Pending' }}
         </div>
-        <div class="text-xs text-emerald-700 font-semibold mt-0.5">
+        <div class="text-xs text-blue-900 font-semibold mt-0.5">
           {{ dashboardData.enrollment?.grade_level_name || 'Grade Level' }}
           <span v-if="dashboardData.enrollment?.strand_code"> • {{ dashboardData.enrollment.strand_code }}</span>
         </div>
@@ -61,7 +61,7 @@
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
             <div>
               <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
-                <BookOpen class="w-4 h-4 text-emerald-600" />
+                <BookOpen class="w-4 h-4 text-blue-800" />
                 <span>Class Schedule & Enrolled Learning Areas</span>
               </h2>
               <p class="text-xs text-slate-500 mt-0.5">Official DepEd instructional schedule and teacher assignments for Grade 10 - Pearl</p>
@@ -73,7 +73,7 @@
                 <button 
                   @click="scheduleViewMode = 'cards'" 
                   type="button" 
-                  :class="scheduleViewMode === 'cards' ? 'bg-white text-emerald-800 shadow-2xs font-bold' : 'text-slate-500 hover:text-slate-800 font-medium'"
+                  :class="scheduleViewMode === 'cards' ? 'bg-white text-blue-950 shadow-2xs font-bold' : 'text-slate-500 hover:text-slate-800 font-medium'"
                   class="px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center space-x-1.5"
                 >
                   <List class="w-3.5 h-3.5" />
@@ -82,7 +82,7 @@
                 <button 
                   @click="scheduleViewMode = 'timetable'" 
                   type="button" 
-                  :class="scheduleViewMode === 'timetable' ? 'bg-white text-emerald-800 shadow-2xs font-bold' : 'text-slate-500 hover:text-slate-800 font-medium'"
+                  :class="scheduleViewMode === 'timetable' ? 'bg-white text-blue-950 shadow-2xs font-bold' : 'text-slate-500 hover:text-slate-800 font-medium'"
                   class="px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center space-x-1.5"
                 >
                   <LayoutGrid class="w-3.5 h-3.5" />
@@ -95,7 +95,7 @@
                 <button 
                   @click="timetableSubView = 'matrix'" 
                   type="button" 
-                  :class="timetableSubView === 'matrix' ? 'bg-emerald-800 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'"
+                  :class="timetableSubView === 'matrix' ? 'bg-blue-900 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'"
                   class="px-2.5 py-1.5 rounded-lg transition cursor-pointer"
                 >
                   Master Matrix
@@ -103,7 +103,7 @@
                 <button 
                   @click="timetableSubView = 'daily'" 
                   type="button" 
-                  :class="timetableSubView === 'daily' ? 'bg-emerald-800 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'"
+                  :class="timetableSubView === 'daily' ? 'bg-blue-900 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'"
                   class="px-2.5 py-1.5 rounded-lg transition cursor-pointer"
                 >
                   Day by Day
@@ -1333,7 +1333,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
             <div class="flex items-center space-x-2">
-              <BookOpen class="w-4 h-4 text-emerald-600" />
+              <BookOpen class="w-4 h-4 text-blue-800" />
               <h2 class="text-base font-bold text-slate-900">My Virtual Classrooms & Learning Areas</h2>
             </div>
             <p class="text-xs text-slate-500 mt-0.5">
@@ -1341,7 +1341,7 @@
             </p>
           </div>
 
-          <div v-if="selectedLmsSubject" class="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200">
+          <div v-if="selectedLmsSubject" class="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-blue-50 text-blue-900 border border-blue-200">
             {{ dashboardData.enrollment?.section_name || 'Enrolled Section' }}
           </div>
         </div>
@@ -1352,7 +1352,7 @@
             <button 
               type="button" 
               @click="setLmsSemesterFilter('active')"
-              :class="selectedLmsSemesterFilter === 'active' ? 'bg-emerald-800 text-white font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900 font-medium'"
+              :class="selectedLmsSemesterFilter === 'active' ? 'bg-blue-900 text-white font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900 font-medium'"
               class="px-3 py-1.5 rounded-lg text-xs transition flex items-center space-x-1.5 cursor-pointer"
             >
               <Sparkles class="w-3.5 h-3.5" />
@@ -1395,8 +1395,8 @@
             :class="[
               'p-3.5 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between space-y-2 group relative',
               selectedLmsSubject?.subject_id === sub.subject_id 
-                ? (isSubjectTermArchived(sub) ? 'bg-amber-950 text-white border-amber-900 shadow-xs' : 'bg-emerald-900 text-white border-emerald-950 shadow-xs') 
-                : (isSubjectTermArchived(sub) ? 'bg-amber-50/40 hover:bg-amber-50/80 text-slate-800 border-amber-200/80' : 'bg-slate-50/80 hover:bg-slate-100 text-slate-800 border-slate-200')
+                ? (isSubjectTermArchived(sub) ? 'bg-amber-950 text-white border-amber-900 shadow-sm' : 'bg-gradient-to-br from-slate-900 to-blue-950 text-white border-blue-900 shadow-md') 
+                : (isSubjectTermArchived(sub) ? 'bg-amber-50/40 hover:bg-amber-50/80 text-slate-800 border-amber-200/80' : 'bg-slate-50/80 hover:bg-white hover:border-blue-300 text-slate-800 border-slate-200')
             ]"
           >
             <div>
@@ -1418,14 +1418,14 @@
                 <span 
                   v-else-if="sub.semester"
                   class="px-1.5 py-0.5 rounded text-[8px] font-bold font-mono border"
-                  :class="selectedLmsSubject?.subject_id === sub.subject_id ? 'bg-emerald-500/30 text-emerald-200 border-emerald-400/40' : 'bg-emerald-100 text-emerald-800 border-emerald-300'"
+                  :class="selectedLmsSubject?.subject_id === sub.subject_id ? 'bg-blue-500/30 text-blue-200 border-blue-400/40' : 'bg-blue-50 text-blue-800 border-blue-200'"
                 >
                   Active
                 </span>
               </div>
 
               <div 
-                :class="selectedLmsSubject?.subject_id === sub.subject_id ? 'text-white' : 'text-slate-900 group-hover:text-emerald-900'"
+                :class="selectedLmsSubject?.subject_id === sub.subject_id ? 'text-white' : 'text-slate-900 group-hover:text-blue-900'"
                 class="font-bold text-xs line-clamp-2 leading-snug"
               >
                 {{ sub.subject_title || sub.subject_name }}
@@ -1495,7 +1495,7 @@
         <!-- Classroom Header Banner -->
         <div 
           class="p-6 rounded-3xl text-white shadow-md space-y-2 relative overflow-hidden transition"
-          :class="isSubjectTermArchived(selectedLmsSubject) ? 'bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950' : 'bg-gradient-to-r from-emerald-900 to-teal-900'"
+          :class="isSubjectTermArchived(selectedLmsSubject) ? 'bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950' : 'bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950'"
         >
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
             <div>
@@ -1512,13 +1512,13 @@
                 </span>
                 <span 
                   v-else-if="selectedLmsSubject.semester" 
-                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/30 text-emerald-200 border border-emerald-400/40 uppercase tracking-wider font-mono"
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/30 text-blue-200 border border-blue-400/40 uppercase tracking-wider font-mono"
                 >
                   Active Term
                 </span>
               </div>
               <h2 class="text-xl sm:text-2xl font-bold mt-1.5">{{ lmsClassData.class_info.subject_name }}</h2>
-              <p class="text-xs text-emerald-200 mt-0.5" :class="{ 'text-amber-200/90': isSubjectTermArchived(selectedLmsSubject) }">
+              <p class="text-xs text-blue-200/90 mt-0.5" :class="{ 'text-amber-200/90': isSubjectTermArchived(selectedLmsSubject) }">
                 Instructor: {{ lmsClassData.class_info.teacher_first_name ? `Prof. ${lmsClassData.class_info.teacher_first_name} ${lmsClassData.class_info.teacher_last_name}` : 'Subject Teacher' }}
                 • Room: {{ lmsClassData.class_info.section_room || 'Designated Room' }}
                 • Term: {{ selectedLmsSubject.semester || 'Full Year' }}
@@ -1565,7 +1565,7 @@
             <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
               <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div class="flex items-center space-x-2">
-                  <BookOpen class="w-4 h-4 text-emerald-600" />
+                  <BookOpen class="w-4 h-4 text-blue-800" />
                   <h3 class="text-sm font-bold text-slate-900">Learning Handouts & Modules</h3>
                 </div>
                 <span class="text-xs text-slate-400 font-mono">{{ lmsClassData.modules.length }} Available</span>
@@ -1579,11 +1579,11 @@
                 <div 
                   v-for="m in lmsClassData.modules" 
                   :key="m.id"
-                  class="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-emerald-500 hover:shadow-xs transition flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  class="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-blue-400 hover:shadow-xs transition flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
                   <div class="space-y-1">
                     <div class="flex items-center space-x-2">
-                      <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-50 text-blue-800 font-mono">
+                      <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-50 text-blue-900 font-mono">
                         {{ m.quarter }} • {{ m.week_label }}
                       </span>
                       <h4 class="font-bold text-slate-900 text-xs">{{ m.title }}</h4>
@@ -1597,7 +1597,7 @@
                       :href="getFileUrl(m.file_path)" 
                       target="_blank" 
                       download 
-                      class="px-3.5 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white font-semibold text-xs transition flex items-center space-x-1.5 shadow-2xs cursor-pointer"
+                      class="px-3.5 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-800 text-white font-semibold text-xs transition flex items-center space-x-1.5 shadow-2xs cursor-pointer"
                     >
                       <Download class="w-3.5 h-3.5" />
                       <span>Download ({{ m.file_size_kb || 0 }} KB)</span>
@@ -1607,7 +1607,7 @@
                       :href="m.external_url" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      class="px-3.5 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-800 text-white font-semibold text-xs transition flex items-center space-x-1.5 shadow-2xs cursor-pointer"
+                      class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition flex items-center space-x-1.5 shadow-2xs cursor-pointer"
                     >
                       <ExternalLink class="w-3.5 h-3.5" />
                       <span>Open Link</span>
@@ -1621,7 +1621,7 @@
             <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
               <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div class="flex items-center space-x-2">
-                  <FileText class="w-4 h-4 text-emerald-600" />
+                  <FileText class="w-4 h-4 text-blue-800" />
                   <h3 class="text-sm font-bold text-slate-900">Assigned Tasks & Submissions</h3>
                 </div>
                 <span class="text-xs text-slate-400 font-mono">{{ lmsClassData.assignments.length }} Tasks</span>
@@ -1635,7 +1635,7 @@
                 <div 
                   v-for="asg in lmsClassData.assignments" 
                   :key="asg.id"
-                  class="p-5 rounded-2xl border border-slate-200 bg-white hover:border-emerald-500 hover:shadow-xs transition space-y-3.5"
+                  class="p-5 rounded-2xl border border-slate-200 bg-white hover:border-blue-400 hover:shadow-xs transition space-y-3.5"
                 >
                   <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div class="space-y-1">
@@ -1736,7 +1736,7 @@
                       "{{ asg.my_submission.submission_text }}"
                     </div>
 
-                    <div v-if="asg.my_submission.teacher_feedback" class="pt-2 border-t border-slate-200/80 text-emerald-900 font-medium">
+                    <div v-if="asg.my_submission.teacher_feedback" class="pt-2 border-t border-slate-200/80 text-blue-950 font-medium">
                       <strong>Teacher Feedback:</strong> {{ asg.my_submission.teacher_feedback }}
                     </div>
                   </div>
@@ -1769,7 +1769,7 @@
                       @click="openSubmitModal(asg)" 
                       type="button" 
                       class="px-4 py-2 rounded-xl text-xs font-semibold shadow-2xs transition flex items-center space-x-1.5 cursor-pointer"
-                      :class="isPastDeadline(asg.due_date) ? 'bg-amber-700 hover:bg-amber-800 text-white' : 'bg-emerald-800 hover:bg-emerald-700 text-white'"
+                      :class="isPastDeadline(asg.due_date) ? 'bg-amber-700 hover:bg-amber-800 text-white' : 'bg-blue-900 hover:bg-blue-800 text-white'"
                     >
                       <UploadCloud class="w-3.5 h-3.5" />
                       <span>{{ asg.my_submission ? 'Resubmit / Edit Work' : (isPastDeadline(asg.due_date) ? 'Turn In Late' : 'Submit Work') }}</span>
@@ -1785,7 +1785,7 @@
             <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
               <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div class="flex items-center space-x-2">
-                  <MessageSquare class="w-4 h-4 text-emerald-600" />
+                  <MessageSquare class="w-4 h-4 text-blue-800" />
                   <h3 class="text-sm font-bold text-slate-900">Teacher Announcements</h3>
                 </div>
                 <span class="text-xs text-slate-400 font-mono">{{ lmsClassData.announcements.length }}</span>
@@ -1828,7 +1828,7 @@
       <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-200 text-xs space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 font-mono">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-900 font-mono">
               {{ activeSubmittingAssignment?.task_type }} • Max {{ activeSubmittingAssignment?.max_score }} Pts
             </span>
             <h3 class="text-base font-extrabold text-slate-900 mt-1">{{ activeSubmittingAssignment?.title }}</h3>
@@ -1872,7 +1872,7 @@
             <input 
               type="file" 
               @change="handleSubmissionFileSelect" 
-              class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-800 hover:file:bg-emerald-100 cursor-pointer"
+              class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-900 hover:file:bg-blue-100 cursor-pointer"
             />
           </div>
 
@@ -1882,7 +1882,7 @@
               v-model="submissionForm.text" 
               rows="3" 
               placeholder="Type your explanation or summary of work..." 
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none"
             ></textarea>
           </div>
 
@@ -1891,7 +1891,7 @@
             <button 
               type="submit" 
               :disabled="isSubmittingWork" 
-              class="px-5 py-2.5 rounded-xl font-semibold bg-emerald-800 hover:bg-emerald-700 disabled:opacity-50 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer"
+              class="px-5 py-2.5 rounded-xl font-semibold bg-blue-900 hover:bg-blue-800 disabled:opacity-50 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer"
             >
               <Send class="w-3.5 h-3.5" />
               <span>{{ isSubmittingWork ? 'Submitting...' : 'Turn In Work' }}</span>
