@@ -910,7 +910,12 @@
                     </button>
                   </div>
 
-                  <!-- Pending / To Follow Up / Physical: Standard Verify & Deficient -->
+                  <!-- To Follow Up: No Verify or Deficient buttons (Promissory note pledged) -->
+                  <template v-else-if="doc.submission_mode === 'To Follow Up' || doc.status === 'To Follow Up'">
+                    <!-- Intentionally empty: To follow up documents do not have verify/deficient buttons until actual submission -->
+                  </template>
+
+                  <!-- Pending Physical or Digital Upload: Standard Verify & Deficient -->
                   <template v-else>
                     <button 
                       @click="verifyDoc(doc.id, 'Verified')"
