@@ -410,7 +410,8 @@ const adminPortalGroups = [
     icon: FileCheck,
     children: [
       { id: 'applications', label: 'Admission Review', icon: FileCheck, tab: 'applications' },
-      { id: 'queue', label: 'Enrollment Queue', icon: ListOrdered, tab: 'queue' }
+      { id: 'queue', label: 'Enrollment Queue', icon: ListOrdered, tab: 'queue' },
+      { id: 'enrolled_docs', label: 'Enrolled Students Documents', icon: FolderArchive, tab: 'enrolled_docs' }
     ]
   },
   {
@@ -422,19 +423,6 @@ const adminPortalGroups = [
       { id: 'assessments', label: 'Billing Assessments & OR', icon: Receipt, tab: 'assessments' },
       { id: 'online_payments', label: 'Online Payment Queue', icon: CreditCard, tab: 'online_payments' },
       { id: 'fees', label: 'Fee Structures & Vouchers', icon: Percent, tab: 'fees' }
-    ]
-  },
-  {
-    id: 'records',
-    label: 'Records & DepEd Forms',
-    basePath: '/records',
-    icon: FolderArchive,
-    children: [
-      { id: 'records', label: 'Permanent Records & SF10', icon: FolderArchive, tab: 'records' },
-      { id: 'drs', label: 'Document Requests (DRS)', icon: FileText, tab: 'drs' },
-      { id: 'school_forms', label: 'DepEd Forms (SF1 & SF5)', icon: Table, tab: 'school_forms' },
-      { id: 'honors', label: 'Honors & Ranking Engine', icon: Award, tab: 'honors' },
-      { id: 'transferees', label: 'Transferee F137 Tracker', icon: FileSpreadsheet, tab: 'transferees' }
     ]
   }
 ];
@@ -526,7 +514,6 @@ const currentRoleTitle = computed(() => {
     case 'coordinator': return 'Scheduler Portal';
     case 'registrar': return 'Registrar Portal';
     case 'treasury': return 'Treasury & Cashier';
-    case 'records': return 'Records Custodian';
     case 'teacher': return 'Faculty Portal';
     case 'student': return 'Student Portal';
     case 'applicant': return 'Admission Portal';
@@ -573,10 +560,8 @@ const categorizedRoleSections = computed(() => {
       {
         title: 'GRADING & MASTERLISTS',
         items: [
-          { id: 'grading', label: 'Electronic Class Record', icon: FileSpreadsheet, path: '/teacher', tab: 'grading' },
-          { id: 'roster', label: 'Class Masterlists', icon: Users, path: '/teacher', tab: 'roster' },
-          { id: 'advisory', label: 'Advisory Section (SF9)', icon: Award, path: '/teacher', tab: 'advisory' },
-          { id: 'attendance', label: 'Attendance Sheet (SF2)', icon: Calendar, path: '/teacher', tab: 'attendance' }
+          { id: 'grading', label: 'Quarterly Grading Sheet', icon: FileSpreadsheet, path: '/teacher', tab: 'grading' },
+          { id: 'roster', label: 'Class Masterlists', icon: Users, path: '/teacher', tab: 'roster' }
         ]
       }
     ];
@@ -589,7 +574,8 @@ const categorizedRoleSections = computed(() => {
         title: 'ADMISSION & ENROLLMENT',
         items: [
           { id: 'applications', label: 'Admission Review', icon: FileCheck, path: '/registrar', tab: 'applications' },
-          { id: 'queue', label: 'Enrollment Queue', icon: ListOrdered, path: '/registrar', tab: 'queue' }
+          { id: 'queue', label: 'Enrollment Queue', icon: ListOrdered, path: '/registrar', tab: 'queue' },
+          { id: 'enrolled_docs', label: 'Enrolled Students Documents', icon: FolderArchive, path: '/registrar', tab: 'enrolled_docs' }
         ]
       }
     ];
@@ -604,22 +590,6 @@ const categorizedRoleSections = computed(() => {
           { id: 'assessments', label: 'Billing Assessments & OR', icon: Receipt, path: '/treasury', tab: 'assessments' },
           { id: 'online_payments', label: 'Online Payment Queue', icon: CreditCard, path: '/treasury', tab: 'online_payments' },
           { id: 'fees', label: 'Fee Structures & Vouchers', icon: Percent, path: '/treasury', tab: 'fees' }
-        ]
-      }
-    ];
-  }
-
-  // 5. Records Custodian Navigation
-  if (currentPath === '/records' || slug === 'records') {
-    return [
-      {
-        title: 'PERMANENT RECORDS & DRS',
-        items: [
-          { id: 'records', label: 'Permanent Records & SF10', icon: FolderArchive, path: '/records', tab: 'records' },
-          { id: 'drs', label: 'Document Requests (DRS)', icon: FileText, path: '/records', tab: 'drs' },
-          { id: 'school_forms', label: 'DepEd Forms (SF1 & SF5)', icon: Table, path: '/records', tab: 'school_forms' },
-          { id: 'honors', label: 'Honors & Ranking Engine', icon: Award, path: '/records', tab: 'honors' },
-          { id: 'transferees', label: 'Transferee F137 Tracker', icon: FileSpreadsheet, path: '/records', tab: 'transferees' }
         ]
       }
     ];

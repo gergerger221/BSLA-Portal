@@ -198,14 +198,11 @@ class RegistrarController {
         $appIdStmt->execute(['id' => $docId]);
         $parentAppId = $appIdStmt->fetchColumn();
 
+        $currStatus = null;
         if ($parentAppId) {
             $chkApp = $db->prepare("SELECT status FROM admission_applications WHERE id = :id");
             $chkApp->execute(['id' => $parentAppId]);
             $currStatus = $chkApp->fetchColumn();
-
-            if ($currStatus === 'Enrolled') {
-                Response::error('Cannot modify document verification status because the student is already officially enrolled.');
-            }
         }
 
         $stmt = $db->prepare("
@@ -253,6 +250,18 @@ class RegistrarController {
                 if ((int)$remDef->fetchColumn() === 0) {
                     $db->prepare("UPDATE admission_applications SET status = 'Under Review' WHERE id = :id AND status = 'Requirements Deficient'")
                        ->execute(['id' => $parentAppId]);
+                }
+
+                // If Form 137 / SF10 was verified, sync to student_records archive
+                $docTypeStmt = $db->prepare("SELECT document_type FROM admission_documents WHERE id = :id");
+                $docTypeStmt->execute(['id' => $docId]);
+                $docType = $docTypeStmt->fetchColumn();
+                if ($docType && (stripos($docType, '137') !== false || stripos($docType, 'SF10') !== false)) {
+                    $db->prepare("
+                        UPDATE student_records 
+                        SET previous_school_f137_status = 'Received' 
+                        WHERE student_id = (SELECT user_id FROM enrollments WHERE application_id = :app_id LIMIT 1)
+                    ")->execute(['app_id' => $parentAppId]);
                 }
             }
         }
@@ -785,6 +794,137 @@ class RegistrarController {
             $db->rollBack();
             Response::error('Failed to undo approval: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Get officially enrolled students with their admission & to-follow documents for evaluation.
+     */
+    public function getEnrolledStudentsDocuments(): void {
+        Auth::requireRole(['registrar', 'admin']);
+        $db = Database::getConnection();
+
+        $search = trim($_GET['search'] ?? '');
+        $filter = $_GET['filter'] ?? 'all'; // all, needs_review, to_follow, compliant
+
+        $sql = "
+            SELECT 
+                e.id as enrollment_id,
+                e.enrollment_no,
+                e.student_id as user_id,
+                e.application_id,
+                e.status as enrollment_status,
+                e.enrolled_at,
+                COALESCE(e.student_no, a.student_no, a.application_no) as student_no,
+                COALESCE(e.lrn, a.lrn) as lrn,
+                a.first_name,
+                a.last_name,
+                a.middle_name,
+                a.email,
+                a.contact_number,
+                a.application_no,
+                a.strand_id,
+                s.code as strand_code,
+                s.name as strand_name,
+                sec.id as section_id,
+                sec.name as section_name,
+                sec.room as section_room,
+                gl.id as grade_level_id,
+                gl.name as grade_level_name,
+                gl.category as grade_category
+            FROM enrollments e
+            JOIN admission_applications a ON e.application_id = a.id
+            LEFT JOIN sections sec ON e.section_id = sec.id
+            LEFT JOIN grade_levels gl ON gl.id = COALESCE(e.grade_level_id, sec.grade_level_id, a.grade_level_id)
+            LEFT JOIN strands s ON s.id = COALESCE(e.strand_id, sec.strand_id, a.strand_id)
+            WHERE e.status IN ('Officially Enrolled', 'Enrolled') OR a.status = 'Enrolled'
+        ";
+        $params = [];
+
+        if ($search !== '') {
+            $sql .= " AND (COALESCE(e.student_no, a.student_no) LIKE :search OR COALESCE(e.lrn, a.lrn) LIKE :search OR a.first_name LIKE :search OR a.last_name LIKE :search OR e.enrollment_no LIKE :search OR sec.name LIKE :search)";
+            $params['search'] = "%{$search}%";
+        }
+
+        $sql .= " ORDER BY a.last_name ASC, a.first_name ASC";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $enrolledList = $stmt->fetchAll();
+
+        $docStmt = $db->prepare("
+            SELECT id, application_id, document_type, submission_mode, target_date, 
+                   promissory_note, file_path, original_filename, file_size, status, 
+                   verification_notes, verified_by, verified_at, uploaded_at
+            FROM admission_documents
+            WHERE application_id = :app_id
+            ORDER BY id ASC
+        ");
+
+        $results = [];
+        $totalEnrolled = count($enrolledList);
+        $needsReviewCount = 0;
+        $hasToFollowCount = 0;
+        $fullyCompliantCount = 0;
+
+        foreach ($enrolledList as $student) {
+            $docStmt->execute(['app_id' => $student['application_id']]);
+            $docs = $docStmt->fetchAll();
+
+            $totalDocs = count($docs);
+            $verifiedDocs = 0;
+            $pendingDocs = 0;
+            $toFollowDocs = 0;
+            $deficientDocs = 0;
+
+            foreach ($docs as $d) {
+                $st = $d['status'];
+                if ($st === 'Verified') {
+                    $verifiedDocs++;
+                } elseif ($st === 'Pending' || $st === 'Under Review') {
+                    $pendingDocs++;
+                } elseif ($st === 'Deficient' || $st === 'Rejected') {
+                    $deficientDocs++;
+                } else {
+                    $toFollowDocs++;
+                }
+            }
+
+            $hasPendingUploads = ($pendingDocs > 0);
+            $isFullyCompliant = ($totalDocs > 0 && $verifiedDocs === $totalDocs);
+            $hasOutstanding = ($toFollowDocs > 0 || $deficientDocs > 0);
+
+            if ($hasPendingUploads) $needsReviewCount++;
+            if ($hasOutstanding) $hasToFollowCount++;
+            if ($isFullyCompliant) $fullyCompliantCount++;
+
+            // Filter condition
+            if ($filter === 'needs_review' && !$hasPendingUploads) continue;
+            if ($filter === 'to_follow' && !$hasOutstanding) continue;
+            if ($filter === 'compliant' && !$isFullyCompliant) continue;
+
+            $student['documents'] = $docs;
+            $student['stats'] = [
+                'total'               => $totalDocs,
+                'verified'            => $verifiedDocs,
+                'pending'             => $pendingDocs,
+                'to_follow'           => $toFollowDocs,
+                'deficient'           => $deficientDocs,
+                'has_pending_uploads' => $hasPendingUploads,
+                'is_fully_compliant'  => $isFullyCompliant
+            ];
+
+            $results[] = $student;
+        }
+
+        Response::success('Enrolled students documents loaded', [
+            'students' => $results,
+            'summary'  => [
+                'total_enrolled'       => $totalEnrolled,
+                'needs_review_count'   => $needsReviewCount,
+                'has_to_follow_count'  => $hasToFollowCount,
+                'fully_compliant_count'=> $fullyCompliantCount
+            ]
+        ]);
     }
 }
 

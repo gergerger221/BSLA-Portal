@@ -116,6 +116,7 @@ export default {
   approveAndQueue: (data) => apiRequest('registrar/approve-and-queue', { method: 'POST', body: data }),
   undoApproval: (applicationId) => apiRequest('registrar/undo-approval', { method: 'POST', body: { application_id: applicationId } }),
   getEnrollmentQueue: (params = '') => apiRequest(`registrar/queue${params ? '&' + params : ''}`),
+  getEnrolledStudentsDocuments: (params = '') => apiRequest(`registrar/enrolled-documents${params ? '&' + params : ''}`),
 
   // Treasury
   getAssessments: (params = '') => apiRequest(`treasury/assessments${params ? '&' + params : ''}`),

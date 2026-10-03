@@ -868,43 +868,7 @@
           </div>
         </div>
 
-        <!-- OFFICIAL DOCUMENT REQUESTS (DRS) -->
-        <div v-show="activeTab === 'all' || activeTab === 'records'" class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm text-xs space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h2 class="text-base font-bold text-slate-900 flex items-center space-x-1.5">
-              <FileText class="w-4 h-4 text-blue-900" />
-              <span>Official Document Requests</span>
-            </h2>
-            <button 
-              @click="showStudentDocModal = true"
-              class="px-3.5 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-800 text-white font-semibold text-[11px] transition shadow-xs cursor-pointer"
-            >
-              + Request Document
-            </button>
-          </div>
 
-          <!-- Requests List -->
-          <div class="space-y-2.5">
-            <div 
-              v-for="dr in myDocRequests" 
-              :key="dr.id" 
-              class="p-3 rounded-2xl border border-slate-200 bg-slate-50/70 flex items-center justify-between text-xs hover:bg-slate-50 transition"
-            >
-              <div>
-                <div class="font-bold text-slate-900">{{ dr.document_type }}</div>
-                <div class="text-[10px] text-slate-400 font-mono">Control #: {{ dr.control_number || 'Pending' }} • {{ dr.copies }} Copy/Copies</div>
-                <div v-if="dr.purpose" class="text-[10px] text-slate-500 italic mt-0.5">Purpose: {{ dr.purpose }}</div>
-              </div>
-              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold" :class="getDRSBadge(dr.status)">
-                {{ dr.status }}
-              </span>
-            </div>
-
-            <div v-if="myDocRequests.length === 0" class="text-center py-6 text-slate-400 text-xs">
-              You have no active document requests.
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -2230,60 +2194,6 @@
       </div>
     </div>
 
-    <!-- MODAL: SUBMIT NEW DOCUMENT REQUEST -->
-    <div v-if="showStudentDocModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200 text-xs space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div>
-            <h3 class="text-base font-extrabold text-slate-900">Request Official Document</h3>
-            <p class="text-[11px] text-slate-500">Submitted directly to the School Records Custodian.</p>
-          </div>
-          <button @click="showStudentDocModal = false" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold">✕</button>
-        </div>
-
-        <form @submit.prevent="submitStudentDocRequest" class="space-y-3">
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Document Type *</label>
-            <select v-model="studentDocForm.document_type" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white" required>
-              <option value="Certificate of Enrollment">Certificate of Enrollment (COE)</option>
-              <option value="Good Moral Character">Certificate of Good Moral Character</option>
-              <option value="Certified True Copy of SF9 / Form 138">Certified True Copy of SF9 (Report Card)</option>
-              <option value="Certificate of Academic Ranking">Certificate of Academic Ranking</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Purpose / Intended Use *</label>
-            <input 
-              v-model="studentDocForm.purpose" 
-              type="text" 
-              placeholder="e.g. Scholarship Application / Passport Renewal / Transfer" 
-              class="w-full px-3 py-2 rounded-xl border border-slate-300"
-              required 
-            />
-          </div>
-
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Number of Copies *</label>
-            <input 
-              v-model.number="studentDocForm.copies" 
-              type="number" 
-              min="1" 
-              max="5" 
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono"
-              required 
-            />
-          </div>
-
-          <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
-            <button type="button" @click="showStudentDocModal = false" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold cursor-pointer">Cancel</button>
-            <button type="submit" class="px-5 py-2.5 rounded-xl font-semibold bg-blue-900 hover:bg-blue-800 text-white shadow-xs transition cursor-pointer">
-              Submit Request
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
 
     <!-- ======================================================== -->
     <!-- PAYMONGO PAYMENT MODAL (FOR ENROLLED STUDENTS)           -->
@@ -2850,8 +2760,6 @@ const dashboardData = ref({
 });
 
 const eventsList = ref([]);
-const myDocRequests = ref([]);
-const showStudentDocModal = ref(false);
 
 // Admission Requirements & Follow-up Compliance State
 const requirementsData = ref({ documents: [], stats: { total: 0, verified: 0, to_follow: 0, deficient: 0, compliance_percentage: 100 } });
@@ -3043,11 +2951,7 @@ const timeSlots = computed(() => {
   return result;
 });
 
-const studentDocForm = ref({
-  document_type: 'Certificate of Enrollment',
-  purpose: '',
-  copies: 1
-});
+
 
 const studentDisplayName = computed(() => {
   const u = dashboardData.value.user;
@@ -3468,60 +3372,6 @@ const getPaymentBadge = (status) => {
   return 'bg-amber-100 text-amber-800 border border-amber-200';
 };
 
-const getDRSBadge = (status) => {
-  switch (status) {
-    case 'Released': return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-    case 'Ready for Pickup': return 'bg-cyan-50 text-cyan-700 border border-cyan-200';
-    case 'Processing': return 'bg-blue-50 text-blue-700 border border-blue-200';
-    case 'Pending': return 'bg-amber-50 text-amber-700 border border-amber-200';
-    default: return 'bg-slate-100 text-slate-700';
-  }
-};
-
-const loadDashboard = async () => {
-  try {
-    const res = await api.getStudentDashboard();
-    dashboardData.value = res.data;
-    if (res.data?.enrollment?.active_semester && isSHSStudent.value) {
-      selectedSemesterFilter.value = res.data.enrollment.active_semester;
-    }
-    if (res.data?.events && res.data.events.length > 0) {
-      eventsList.value = res.data.events;
-    }
-  } catch (err) {
-    console.error('Failed to load student dashboard:', err);
-  }
-
-  try {
-    const evRes = await api.getEvents();
-    if (evRes.data?.events && evRes.data.events.length > 0) {
-      eventsList.value = evRes.data.events;
-    }
-  } catch (err) {
-    console.error('Failed to load events:', err);
-  }
-
-  try {
-    const docRes = await api.getDocumentRequests();
-    myDocRequests.value = docRes.data || [];
-  } catch (err) {
-    console.error('Failed to load document requests:', err);
-  }
-};
-
-const submitStudentDocRequest = async () => {
-  try {
-    await api.saveDocumentRequest(studentDocForm.value);
-    showStudentDocModal.value = false;
-    studentDocForm.value.purpose = '';
-    const docRes = await api.getDocumentRequests();
-    myDocRequests.value = docRes.data || [];
-    showNotice('Official Document Request', 'Your request has been submitted and queued for the School Records Custodian.', 'success');
-  } catch (err) {
-    showNotice('Request Failed', err.message || 'Failed to submit document request.', 'error');
-  }
-};
-
 // ========================================================
 // STUDENT LMS STATE & METHODS
 // ========================================================
@@ -3933,6 +3783,30 @@ const openModulePreview = async (m) => {
     } finally {
       isRenderingDocx.value = false;
     }
+  }
+};
+
+const loadDashboard = async () => {
+  try {
+    const res = await api.getStudentDashboard();
+    dashboardData.value = res.data;
+    if (res.data?.enrollment?.active_semester && isSHSStudent.value) {
+      selectedSemesterFilter.value = res.data.enrollment.active_semester;
+    }
+    if (res.data?.events && res.data.events.length > 0) {
+      eventsList.value = res.data.events;
+    }
+  } catch (err) {
+    console.error('Failed to load student dashboard:', err);
+  }
+
+  try {
+    const evRes = await api.getEvents();
+    if (evRes.data?.events && evRes.data.events.length > 0) {
+      eventsList.value = evRes.data.events;
+    }
+  } catch (err) {
+    console.error('Failed to load events:', err);
   }
 };
 

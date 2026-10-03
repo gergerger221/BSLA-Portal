@@ -515,12 +515,11 @@ const isPortalRoute = computed(() => {
     'RegistrarDashboard', 
     'TreasuryDashboard', 
     'CoordinatorDashboard', 
-    'RecordsDashboard', 
     'StudentDashboard', 
     'AdminDashboard',
     'TeacherDashboard'
   ];
-  return portalRoutes.includes(route.name) || ['/admission', '/registrar', '/treasury', '/coordinator', '/records', '/student', '/admin', '/teacher'].some(p => route.path.startsWith(p));
+  return portalRoutes.includes(route.name) || ['/admission', '/registrar', '/treasury', '/coordinator', '/student', '/admin', '/teacher'].some(p => route.path.startsWith(p));
 });
 
 const isStandaloneAuthRoute = computed(() => {
@@ -533,9 +532,8 @@ const breadcrumbPortalName = computed(() => {
   const path = route.path;
   if (path.startsWith('/admin')) return 'Super Admin Control';
   if (path.startsWith('/coordinator')) return 'Academic Coordinator';
-  if (path.startsWith('/registrar')) return 'Registrar Admission & Queue';
+  if (path.startsWith('/registrar')) return 'Registrar Admission & Documents';
   if (path.startsWith('/treasury')) return 'Treasury & Cashier';
-  if (path.startsWith('/records')) return 'Records & DepEd Archives';
   if (path.startsWith('/student')) return 'Student Portal';
   if (path.startsWith('/teacher')) return 'Teacher & Faculty';
   if (path.startsWith('/admission')) return 'Admission Procedure';
@@ -560,6 +558,7 @@ const breadcrumbActiveTabName = computed(() => {
   }
   if (path.startsWith('/registrar')) {
     if (tab === 'queue') return 'Enrollment Seating Queue';
+    if (tab === 'enrolled_docs') return 'Enrolled Students Documents Evaluation';
     return 'Admission Applications Evaluation';
   }
   if (path.startsWith('/treasury')) {
@@ -567,24 +566,15 @@ const breadcrumbActiveTabName = computed(() => {
     if (tab === 'fees' || tab === 'fee-structures') return 'Fee Structures & DepEd Vouchers';
     return 'Billing Assessments & Official Receipts';
   }
-  if (path.startsWith('/records')) {
-    if (tab === 'drs') return 'Document Request System (DRS)';
-    if (tab === 'school_forms') return 'DepEd School Forms (SF1 & SF5)';
-    if (tab === 'honors') return 'Academic Honors & GWA Engine';
-    if (tab === 'transferees') return 'Transferee Compliance Tracker';
-    return 'Student Permanent Records (SF10 / Form 137)';
-  }
   if (path.startsWith('/student')) {
     if (tab === 'account') return 'Statement of Account & Receipts';
     if (tab === 'events') return 'School Events Calendar';
-    if (tab === 'records') return 'Academic Records & Grades';
+    if (tab === 'records') return 'Admission Requirements & Compliance';
     return 'Class Schedule & Subject Timetable';
   }
   if (path.startsWith('/teacher')) {
-    if (tab === 'grading') return 'Electronic Class Record (E-Class Record)';
+    if (tab === 'grading') return 'Quarterly Grading Sheet (Q1–Q4)';
     if (tab === 'roster') return 'Class Masterlists & Student Directory';
-    if (tab === 'advisory') return 'Advisory Section (SF9 Core Values)';
-    if (tab === 'attendance') return 'Attendance Sheet (SF2 Daily Log)';
     return 'Weekly Schedule & Teaching Load';
   }
   if (path.startsWith('/admission')) {
@@ -622,7 +612,7 @@ const loadCurrentUser = () => {
 };
 
 const confirmLogout = async () => {
-  const isStaff = (currentUser.value && ['admin', 'registrar', 'treasury', 'coordinator', 'records', 'teacher'].includes(currentUser.value.role_slug)) || route.path.startsWith('/teacher');
+  const isStaff = (currentUser.value && ['admin', 'registrar', 'treasury', 'coordinator', 'teacher'].includes(currentUser.value.role_slug)) || route.path.startsWith('/teacher');
   showLogoutConfirm.value = false;
   try {
     await api.logout();

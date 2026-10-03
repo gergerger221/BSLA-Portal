@@ -18,6 +18,9 @@
           <span class="text-blue-300">•</span>
           <span>In Queue:</span>
           <strong class="text-blue-900 font-bold">{{ queueList.length }}</strong>
+          <span class="text-blue-300">•</span>
+          <span>Enrolled:</span>
+          <strong class="text-blue-900 font-bold">{{ enrolledSummary.total_enrolled || enrolledStudents.length }}</strong>
         </div>
         <button 
           @click="loadApplications(); loadQueue();"
@@ -38,6 +41,44 @@
     <div v-if="errorMessage" class="p-4 rounded-2xl bg-rose-950/80 border border-rose-500 text-rose-300 text-xs mb-6 flex items-center justify-between shadow-md">
       <span>{{ errorMessage }}</span>
       <button @click="errorMessage = ''" class="font-bold cursor-pointer">✕</button>
+    </div>
+
+    <!-- Tab Switcher Navigation Bar -->
+    <div class="no-print flex items-center space-x-2 mb-6 border-b border-slate-200 pb-3 flex-wrap gap-y-2">
+      <button 
+        @click="switchTab('applications')" 
+        :class="activeTab === 'applications' ? 'bg-blue-900 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold'"
+        class="px-4 py-2 rounded-xl text-xs transition cursor-pointer flex items-center space-x-2"
+      >
+        <FileCheck class="w-4 h-4" />
+        <span>Admission Applications</span>
+        <span class="px-2 py-0.5 rounded-full text-[10px] bg-white/20 text-white font-mono font-bold">{{ applications.length }}</span>
+      </button>
+
+      <button 
+        @click="switchTab('queue')" 
+        :class="activeTab === 'queue' ? 'bg-blue-900 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold'"
+        class="px-4 py-2 rounded-xl text-xs transition cursor-pointer flex items-center space-x-2"
+      >
+        <ListOrdered class="w-4 h-4" />
+        <span>Enrollment Queue</span>
+        <span class="px-2 py-0.5 rounded-full text-[10px] bg-white/20 text-white font-mono font-bold">{{ queueList.length }}</span>
+      </button>
+
+      <button 
+        @click="switchTab('enrolled_docs')" 
+        :class="activeTab === 'enrolled_docs' ? 'bg-blue-900 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold'"
+        class="px-4 py-2 rounded-xl text-xs transition cursor-pointer flex items-center space-x-2"
+      >
+        <FolderArchive class="w-4 h-4" />
+        <span>Enrolled Students Documents</span>
+        <span v-if="enrolledSummary.needs_review_count > 0" class="px-2 py-0.5 rounded-full text-[10px] bg-amber-500 text-white font-bold animate-pulse">
+          {{ enrolledSummary.needs_review_count }} Needs Review
+        </span>
+        <span v-else class="px-2 py-0.5 rounded-full text-[10px] bg-slate-200 text-slate-700 font-mono font-bold">
+          {{ enrolledStudents.length }}
+        </span>
+      </button>
     </div>
 
     <!-- TAB 1: ADMISSION APPLICATIONS REVIEW -->
@@ -222,6 +263,434 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- TAB 3: ENROLLED STUDENTS DOCUMENTS EVALUATION (TO-FOLLOW CREDENTIALS) -->
+    <div v-if="activeTab === 'enrolled_docs'" class="space-y-6">
+      
+      <!-- Top Metrics Banner -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Officially Enrolled</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">Active</span>
+          </div>
+          <strong class="text-2xl font-bold text-slate-900 font-mono mt-1 block">{{ enrolledSummary.total_enrolled }}</strong>
+          <span class="text-[10px] text-slate-400">Total enrolled student body</span>
+        </div>
+
+        <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Needs Evaluation</span>
+            <span v-if="enrolledSummary.needs_review_count > 0" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 animate-pulse">Action Required</span>
+            <span v-else class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-500 border border-slate-200">Clear</span>
+          </div>
+          <strong class="text-2xl font-bold text-amber-600 font-mono mt-1 block">{{ enrolledSummary.needs_review_count }}</strong>
+          <span class="text-[10px] text-slate-400">Uploaded to-follow documents pending review</span>
+        </div>
+
+        <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">With To-Follow Docs</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-800 border border-purple-200">Pending</span>
+          </div>
+          <strong class="text-2xl font-bold text-purple-700 font-mono mt-1 block">{{ enrolledSummary.has_to_follow_count }}</strong>
+          <span class="text-[10px] text-slate-400">Learners with outstanding credentials</span>
+        </div>
+
+        <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Fully Compliant</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono">100%</span>
+          </div>
+          <strong class="text-2xl font-bold text-emerald-600 font-mono mt-1 block">{{ enrolledSummary.fully_compliant_count }}</strong>
+          <span class="text-[10px] text-slate-400">All required documents verified</span>
+        </div>
+      </div>
+
+      <!-- Main Enrolled Students Container -->
+      <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-5">
+        
+        <!-- Controls & Search -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+              <FolderArchive class="w-4 h-4 text-blue-900" />
+              <span>Enrolled Student Document Verification</span>
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">
+              Evaluate and verify to-follow documents submitted by enrolled students (Form 137/SF10, PSA, Form 138, etc.).
+            </p>
+          </div>
+
+          <div class="flex items-center space-x-2 w-full sm:w-auto flex-wrap gap-y-2">
+            <!-- Search -->
+            <div class="relative w-full sm:w-72">
+              <input 
+                v-model="enrolledSearchQuery" 
+                @input="loadEnrolledStudents"
+                type="text" 
+                placeholder="Search name, LRN, Student ID, section..." 
+                class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500"
+              />
+              <Search class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+            </div>
+
+            <!-- Filter Status -->
+            <select 
+              v-model="enrolledFilter" 
+              @change="loadEnrolledStudents" 
+              class="px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white font-medium text-slate-700 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="all">All Enrolled Students</option>
+              <option value="needs_review">Needs Review (Pending Uploads)</option>
+              <option value="to_follow">Has Outstanding / To-Follow</option>
+              <option value="compliant">Fully Compliant (All Verified)</option>
+            </select>
+
+            <button 
+              @click="loadEnrolledStudents" 
+              type="button"
+              class="p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition cursor-pointer"
+              title="Reload Enrolled Students"
+            >
+              <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': isLoadingEnrolled }" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Enrolled Students Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left border-collapse min-w-[800px]">
+            <thead>
+              <tr class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
+                <th class="py-3 px-4 w-12 text-slate-400 font-mono">#</th>
+                <th class="py-3 px-4">Learner Information</th>
+                <th class="py-3 px-4">Class Section & Grade</th>
+                <th class="py-3 px-4 text-center">Compliance Status</th>
+                <th class="py-3 px-4">Submitted & To-Follow Items</th>
+                <th class="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr 
+                v-for="(st, idx) in enrolledStudents" 
+                :key="st.enrollment_id" 
+                class="hover:bg-slate-50/80 transition"
+              >
+                <td class="py-3.5 px-4 font-mono text-slate-400 text-[11px]">{{ idx + 1 }}</td>
+                
+                <!-- Learner Info -->
+                <td class="py-3.5 px-4">
+                  <div class="font-bold text-slate-900 text-sm flex items-center space-x-1.5">
+                    <span>{{ st.last_name }}, {{ st.first_name }} {{ st.middle_name || '' }}</span>
+                    <span v-if="st.stats?.has_pending_uploads" class="w-2 h-2 rounded-full bg-amber-500 animate-ping" title="Has pending uploads"></span>
+                  </div>
+                  <div class="text-[11px] text-slate-500 font-mono mt-0.5 flex items-center space-x-2">
+                    <span>ID: <strong class="text-blue-900">{{ st.student_no || 'Pending ID' }}</strong></span>
+                    <span class="text-slate-300">•</span>
+                    <span>LRN: <strong class="text-slate-700">{{ st.lrn || 'No LRN' }}</strong></span>
+                  </div>
+                </td>
+
+                <!-- Section & Grade -->
+                <td class="py-3.5 px-4">
+                  <div class="font-semibold text-slate-800">{{ st.section_name || 'No Section' }}</div>
+                  <div class="text-[11px] text-slate-500 mt-0.5">
+                    {{ st.grade_level_name || 'Grade Level' }}
+                    <span v-if="st.strand_code" class="text-blue-900 font-bold"> • {{ st.strand_code }}</span>
+                  </div>
+                </td>
+
+                <!-- Compliance Status Progress -->
+                <td class="py-3.5 px-4 text-center">
+                  <div class="inline-flex flex-col items-center">
+                    <span 
+                      v-if="st.stats?.is_fully_compliant" 
+                      class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center space-x-1"
+                    >
+                      <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Complete ({{ st.stats?.verified }}/{{ st.stats?.total }})</span>
+                    </span>
+                    <span 
+                      v-else-if="st.stats?.has_pending_uploads" 
+                      class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 flex items-center space-x-1 animate-pulse"
+                    >
+                      <AlertCircle class="w-3.5 h-3.5 text-amber-600" />
+                      <span>{{ st.stats?.pending }} Pending Review</span>
+                    </span>
+                    <span 
+                      v-else 
+                      class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200"
+                    >
+                      {{ st.stats?.verified || 0 }}/{{ st.stats?.total || 0 }} Verified
+                    </span>
+
+                    <!-- Mini Progress bar -->
+                    <div class="w-24 bg-slate-100 rounded-full h-1.5 mt-1.5 overflow-hidden">
+                      <div 
+                        class="h-1.5 rounded-full transition-all"
+                        :class="st.stats?.is_fully_compliant ? 'bg-emerald-500' : 'bg-blue-600'"
+                        :style="{ width: `${st.stats?.total ? Math.round((st.stats.verified / st.stats.total) * 100) : 0}%` }"
+                      ></div>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Submitted & To-Follow Items Pills -->
+                <td class="py-3.5 px-4">
+                  <div class="flex flex-wrap gap-1 max-w-xs">
+                    <span 
+                      v-for="d in st.documents" 
+                      :key="d.id"
+                      class="px-2 py-0.5 rounded-md text-[10px] font-semibold border flex items-center space-x-1"
+                      :class="d.status === 'Verified' 
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+                        : (d.status === 'Pending' || d.status === 'Under Review')
+                        ? 'bg-amber-50 text-amber-900 border-amber-300 font-bold'
+                        : d.status === 'Deficient' || d.status === 'Rejected'
+                        ? 'bg-rose-50 text-rose-800 border-rose-200'
+                        : 'bg-slate-100 text-slate-600 border-slate-200'"
+                      :title="`${d.document_type}: ${d.status}`"
+                    >
+                      <span v-if="d.status === 'Verified'" class="text-emerald-600">✓</span>
+                      <span v-else-if="d.status === 'Pending'" class="text-amber-600">●</span>
+                      <span v-else-if="d.status === 'Deficient'" class="text-rose-600">✕</span>
+                      <span class="truncate max-w-[120px]">{{ d.document_type }}</span>
+                    </span>
+                  </div>
+                </td>
+
+                <!-- Actions -->
+                <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                  <button 
+                    @click="openEnrolledStudentModal(st)"
+                    class="px-3.5 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-800 text-white font-semibold text-xs shadow-2xs transition flex items-center space-x-1.5 ml-auto cursor-pointer"
+                  >
+                    <FolderArchive class="w-3.5 h-3.5" />
+                    <span>Evaluate Docs</span>
+                  </button>
+                </td>
+              </tr>
+
+              <tr v-if="enrolledStudents.length === 0">
+                <td colspan="6" class="p-8 text-center text-slate-400 text-xs">
+                  No enrolled students matching the selected filter.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ENROLLED STUDENT DOCUMENTS EVALUATION MODAL -->
+    <div v-if="selectedEnrolledStudent" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-6">
+        
+        <!-- Modal Top Bar -->
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div class="space-y-0.5">
+            <div class="flex items-center space-x-2">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200 font-mono">
+                {{ selectedEnrolledStudent.enrollment_no }}
+              </span>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                Officially Enrolled
+              </span>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 pt-1">
+              {{ selectedEnrolledStudent.first_name }} {{ selectedEnrolledStudent.middle_name || '' }} {{ selectedEnrolledStudent.last_name }}
+            </h3>
+            <p class="text-xs text-slate-500 font-mono">
+              Student ID: <strong class="text-blue-950">{{ selectedEnrolledStudent.student_no }}</strong> • 
+              LRN: <strong class="text-slate-800">{{ selectedEnrolledStudent.lrn || 'N/A' }}</strong> • 
+              Class: <strong class="text-slate-800">{{ selectedEnrolledStudent.section_name }} ({{ selectedEnrolledStudent.grade_level_name }})</strong>
+            </p>
+          </div>
+          <button 
+            @click="selectedEnrolledStudent = null" 
+            class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-sm cursor-pointer transition"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- Compliance Summary Pill -->
+        <div class="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div>
+            <div class="font-extrabold text-blue-950 text-sm">
+              Document Compliance: {{ selectedEnrolledStudent.stats?.verified || 0 }} of {{ selectedEnrolledStudent.stats?.total || 0 }} Verified
+            </div>
+            <p class="text-slate-600 text-[11px] mt-0.5">
+              Evaluate and verify to-follow documents submitted by this student. Once marked as Verified, the student's compliance record and DepEd archives are updated.
+            </p>
+          </div>
+          <div class="shrink-0 font-mono font-bold text-blue-900 text-sm bg-white px-3 py-1.5 rounded-xl border border-blue-200">
+            {{ selectedEnrolledStudent.stats?.total ? Math.round((selectedEnrolledStudent.stats.verified / selectedEnrolledStudent.stats.total) * 100) : 0 }}% Compliant
+          </div>
+        </div>
+
+        <!-- Documents List -->
+        <div class="space-y-3">
+          <div 
+            v-for="doc in selectedEnrolledStudent.documents" 
+            :key="doc.id" 
+            class="p-4 rounded-2xl border transition flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs"
+            :class="doc.status === 'Verified' 
+              ? 'border-emerald-200 bg-emerald-50/40' 
+              : (doc.status === 'Pending' || doc.status === 'Under Review')
+              ? 'border-amber-300 bg-amber-50/60 shadow-xs'
+              : doc.status === 'Deficient' || doc.status === 'Rejected'
+              ? 'border-rose-200 bg-rose-50/40'
+              : 'border-slate-200 bg-slate-50/60'"
+          >
+            <!-- Left Info -->
+            <div class="space-y-1 min-w-0">
+              <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                <span class="font-bold text-slate-900 text-sm">{{ doc.document_type }}</span>
+                
+                <!-- Status Badge -->
+                <span 
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                  :class="doc.status === 'Verified' 
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                    : (doc.status === 'Pending' || doc.status === 'Under Review')
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300 animate-pulse'
+                    : doc.status === 'Deficient' || doc.status === 'Rejected'
+                    ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                    : 'bg-slate-200 text-slate-700 border border-slate-300'"
+                >
+                  {{ doc.status }}
+                </span>
+
+                <!-- Submission Mode -->
+                <span class="px-2 py-0.5 rounded text-[10px] bg-white border border-slate-200 text-slate-600 font-mono">
+                  {{ doc.submission_mode || 'Submission Mode' }}
+                </span>
+              </div>
+
+              <!-- File Info & Notes -->
+              <div class="text-[11px] text-slate-600 space-y-0.5">
+                <div v-if="doc.file_path" class="flex items-center space-x-2 text-slate-500">
+                  <FileText class="w-3.5 h-3.5 text-blue-700 shrink-0" />
+                  <span class="font-mono text-slate-700 truncate max-w-xs">{{ doc.original_filename || 'Uploaded Document File' }}</span>
+                  <span v-if="doc.file_size" class="text-slate-400">({{ ((doc.file_size || 0) / 1024).toFixed(1) }} KB)</span>
+                  <span v-if="doc.uploaded_at" class="text-slate-400">• {{ formatDate(doc.uploaded_at) }}</span>
+                </div>
+                <div v-else class="text-slate-400 italic">
+                  No digital file attached (Promissory or Physical Submission).
+                </div>
+
+                <div v-if="doc.verification_notes" class="text-[11px] text-slate-700 font-medium bg-white/70 px-2 py-1 rounded border border-slate-200">
+                  <strong>Notes:</strong> {{ doc.verification_notes }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Actions -->
+            <div class="flex items-center space-x-2 shrink-0 flex-wrap gap-y-1 sm:justify-end">
+              <!-- View Document Button -->
+              <button 
+                v-if="doc.file_path"
+                type="button" 
+                @click="openPreviewDoc(doc)"
+                class="px-3 py-1.5 rounded-xl border border-blue-200 bg-white hover:bg-blue-50 text-blue-900 font-bold text-xs transition flex items-center space-x-1 cursor-pointer shadow-2xs"
+                title="Preview document in browser"
+              >
+                <Eye class="w-3.5 h-3.5 text-blue-700" />
+                <span>View</span>
+              </button>
+
+              <!-- If Already Verified -->
+              <div v-if="doc.status === 'Verified'" class="flex items-center space-x-1.5">
+                <span class="text-emerald-700 font-bold text-xs flex items-center space-x-1 bg-emerald-100/60 px-2.5 py-1 rounded-xl">
+                  <Check class="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Verified</span>
+                </span>
+                <button 
+                  type="button" 
+                  @click="docBeingMarkedDeficient = doc; deficiencyReasonInput = '';"
+                  class="px-2.5 py-1 rounded-xl border border-slate-300 hover:bg-rose-50 hover:text-rose-700 text-slate-500 text-[11px] font-semibold transition cursor-pointer"
+                  title="Mark Deficient if issue found"
+                >
+                  Re-evaluate
+                </button>
+              </div>
+
+              <!-- If Pending / Deficient / To Follow -->
+              <template v-else>
+                <button 
+                  type="button" 
+                  @click="verifyEnrolledDoc(doc, 'Verified')"
+                  :disabled="isVerifyingEnrolledDoc"
+                  class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs transition flex items-center space-x-1 cursor-pointer shadow-2xs"
+                >
+                  <Check class="w-3.5 h-3.5" />
+                  <span>Verify</span>
+                </button>
+
+                <button 
+                  type="button" 
+                  @click="docBeingMarkedDeficient = doc; deficiencyReasonInput = '';"
+                  class="px-3.5 py-1.5 rounded-xl border border-rose-300 bg-white hover:bg-rose-50 text-rose-700 font-bold text-xs transition flex items-center space-x-1 cursor-pointer shadow-2xs"
+                >
+                  <span>Mark Deficient</span>
+                </button>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inline Form: When Marking Document Deficient -->
+        <div v-if="docBeingMarkedDeficient" class="p-4 rounded-2xl bg-rose-50 border border-rose-300 text-xs space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-rose-950 flex items-center space-x-1.5">
+              <AlertTriangle class="w-4 h-4 text-rose-600" />
+              <span>Flag '{{ docBeingMarkedDeficient.document_type }}' as Deficient / Incomplete</span>
+            </span>
+            <button @click="docBeingMarkedDeficient = null" class="text-rose-500 hover:text-rose-700 font-bold text-sm cursor-pointer">✕</button>
+          </div>
+          <p class="text-slate-600 text-[11px]">
+            Please enter a remark or reason so the student understands what to fix in their portal (e.g., "Blurry scan", "Missing second page", "Certified copy required").
+          </p>
+          <input 
+            v-model="deficiencyReasonInput" 
+            type="text" 
+            placeholder="e.g. Unreadable / Missing back page / Wrong document uploaded"
+            class="w-full px-3 py-2 rounded-xl border border-rose-300 bg-white text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+            @keyup.enter="verifyEnrolledDoc(docBeingMarkedDeficient, 'Deficient', deficiencyReasonInput)"
+          />
+          <div class="flex items-center justify-end space-x-2">
+            <button 
+              type="button" 
+              @click="docBeingMarkedDeficient = null"
+              class="px-3 py-1.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button 
+              type="button" 
+              @click="verifyEnrolledDoc(docBeingMarkedDeficient, 'Deficient', deficiencyReasonInput)"
+              :disabled="isVerifyingEnrolledDoc"
+              class="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold transition cursor-pointer shadow-xs"
+            >
+              Save Deficiency
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="flex items-center justify-end pt-4 border-t border-slate-100">
+          <button 
+            type="button" 
+            @click="selectedEnrolledStudent = null"
+            class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition cursor-pointer"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1193,21 +1662,53 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { 
   Search, RefreshCw, Eye, Download, FileText, AlertTriangle, RotateCcw, Printer, 
   ArrowLeft, Lock, CheckCircle2, User, MapPin, Phone, Mail, GraduationCap, Building,
-  Calendar, ShieldCheck, BookOpen, Clock, Layers, Check, X, Loader2
+  Calendar, ShieldCheck, BookOpen, Clock, Layers, Check, X, Loader2, FileCheck,
+  ListOrdered, FolderArchive, Sparkles, Filter, ChevronRight, UserCheck, AlertCircle
 } from 'lucide-vue-next';
 import api, { getFileUrl } from '../../services/api';
 
 const route = useRoute();
+const router = useRouter();
 const activeTab = ref('applications');
 const modalTab = ref('profile');
+
+const enrolledStudents = ref([]);
+const enrolledSummary = ref({
+  total_enrolled: 0,
+  needs_review_count: 0,
+  has_to_follow_count: 0,
+  fully_compliant_count: 0
+});
+const enrolledSearchQuery = ref('');
+const enrolledFilter = ref('all');
+const isLoadingEnrolled = ref(false);
+const selectedEnrolledStudent = ref(null);
+const isVerifyingEnrolledDoc = ref(false);
+const deficiencyReasonInput = ref('');
+const docBeingMarkedDeficient = ref(null);
+
+const switchTab = (tab) => {
+  activeTab.value = tab;
+  router.push({ query: { ...route.query, tab } });
+  if (tab === 'enrolled_docs') {
+    loadEnrolledStudents();
+  } else if (tab === 'queue') {
+    loadQueue();
+  } else {
+    loadApplications();
+  }
+};
 
 watch(() => route.query.tab, (newTab) => {
   if (newTab === 'queue') {
     activeTab.value = 'queue';
+  } else if (newTab === 'enrolled_docs' || newTab === 'enrolled-docs') {
+    activeTab.value = 'enrolled_docs';
+    loadEnrolledStudents();
   } else {
     activeTab.value = 'applications';
   }
@@ -1599,9 +2100,66 @@ const printStudentForm = () => {
   window.print();
 };
 
+const loadEnrolledStudents = async () => {
+  isLoadingEnrolled.value = true;
+  try {
+    const params = new URLSearchParams();
+    if (enrolledSearchQuery.value) params.append('search', enrolledSearchQuery.value);
+    if (enrolledFilter.value && enrolledFilter.value !== 'all') params.append('filter', enrolledFilter.value);
+    const res = await api.getEnrolledStudentsDocuments(params.toString());
+    enrolledStudents.value = res.data?.students || [];
+    enrolledSummary.value = res.data?.summary || {
+      total_enrolled: 0,
+      needs_review_count: 0,
+      has_to_follow_count: 0,
+      fully_compliant_count: 0
+    };
+  } catch (err) {
+    console.error('Failed to load enrolled students documents:', err);
+    errorMessage.value = err.message || 'Failed to load enrolled students documents.';
+  } finally {
+    isLoadingEnrolled.value = false;
+  }
+};
+
+const openEnrolledStudentModal = (student) => {
+  selectedEnrolledStudent.value = student;
+  docBeingMarkedDeficient.value = null;
+  deficiencyReasonInput.value = '';
+};
+
+const verifyEnrolledDoc = async (doc, newStatus, notes = '') => {
+  isVerifyingEnrolledDoc.value = true;
+  try {
+    await api.verifyDocument({
+      document_id: doc.id,
+      status: newStatus,
+      verification_notes: notes || doc.verification_notes || `Marked as ${newStatus} by Registrar.`
+    });
+
+    successMessage.value = `Document '${doc.document_type}' has been marked as ${newStatus}.`;
+    docBeingMarkedDeficient.value = null;
+    deficiencyReasonInput.value = '';
+
+    await loadEnrolledStudents();
+    if (selectedEnrolledStudent.value) {
+      const refreshed = enrolledStudents.value.find(s => s.enrollment_id === selectedEnrolledStudent.value.enrollment_id);
+      if (refreshed) {
+        selectedEnrolledStudent.value = refreshed;
+      }
+    }
+    setTimeout(() => { successMessage.value = ''; }, 4000);
+  } catch (err) {
+    errorMessage.value = err.message || `Failed to update document status to ${newStatus}.`;
+  } finally {
+    isVerifyingEnrolledDoc.value = false;
+  }
+};
+
 onMounted(() => {
   loadApplications();
   loadQueue();
+  loadEnrolledStudents();
 });
 </script>
 

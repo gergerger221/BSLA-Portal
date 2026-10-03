@@ -225,6 +225,9 @@ try {
         case 'registrar/queue':
             (new RegistrarController())->getQueue();
             break;
+        case 'registrar/enrolled-documents':
+            (new RegistrarController())->getEnrolledStudentsDocuments();
+            break;
 
         // --- TREASURY & BILLING ---
         case 'treasury/assessments':

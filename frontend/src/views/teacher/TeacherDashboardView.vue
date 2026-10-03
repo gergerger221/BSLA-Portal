@@ -12,7 +12,7 @@
           {{ teacherProfile?.first_name ? `Prof. ${teacherProfile.first_name} ${teacherProfile.last_name}` : 'Teacher & Faculty Portal' }}
         </h1>
         <p class="text-xs text-slate-500 mt-0.5">
-          DepEd Electronic Class Record (E-Class Record), Weekly Bell Timetable, Class Masterlists, and Advisory SF9 Core Values.
+          Quarterly Grading Sheet (Q1–Q4), Weekly Bell Timetable, Classroom LMS, and Section Masterlists.
         </p>
       </div>
 
@@ -84,18 +84,14 @@
         <span class="text-[10px] text-slate-400">Total learners across sections</span>
       </div>
 
-      <!-- Card 4: Official Advisory Homeroom (1-to-1 DepEd Standard) -->
+      <!-- Card 4: Quarterly Grading Summary -->
       <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Advisory Homeroom</span>
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-800 border border-purple-200">1-to-1 DepEd</span>
+          <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Grading Status</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono">Q1 - Q4</span>
         </div>
-        <strong class="text-base font-bold text-purple-900 mt-1 block truncate">
-          {{ dashboardStats.advisory_section ? dashboardStats.advisory_section.section_name : 'No Advisory Assigned' }}
-        </strong>
-        <span class="text-[10px] text-slate-500">
-          {{ dashboardStats.advisory_section ? (dashboardStats.advisory_section.room || 'Room 401') : 'Pure Subject Teacher' }}
-        </span>
+        <strong class="text-2xl font-bold text-slate-900 font-mono mt-1 block">{{ teachingClasses.length }}</strong>
+        <span class="text-[10px] text-slate-400">Class grading rosters active</span>
       </div>
     </div>
 
@@ -803,7 +799,7 @@
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div>
           <div class="flex items-center space-x-2">
-            <h2 class="text-base font-bold text-slate-900">DepEd Electronic Class Record (E-Class Record)</h2>
+            <h2 class="text-base font-bold text-slate-900">Quarterly Grading Sheet (Q1–Q4)</h2>
             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-900 font-mono">
               DepEd Order 8, s. 2015
             </span>
@@ -1122,221 +1118,7 @@
       </div>
     </div>
 
-    <!-- ======================================================== -->
-    <!-- TAB 4: ADVISORY SECTION & SF9 CORE VALUES                -->
-    <!-- ======================================================== -->
-    <div v-if="activeTab === 'advisory'" class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-        <div>
-          <div class="flex items-center space-x-2">
-            <h2 class="text-base font-bold text-slate-900">Homeroom Advisory Section & SF9 Core Values</h2>
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-900 font-mono">
-              Class Adviser
-            </span>
-          </div>
-          <p class="text-xs text-slate-500 mt-0.5">
-            DepEd SF9 Learner Core Values Matrix (AO = Always Observed, SO = Sometimes Observed, RO = Rarely Observed, NO = Not Observed).
-          </p>
-        </div>
 
-        <div class="flex items-center space-x-2">
-          <button 
-            v-if="advisoryData.has_advisory"
-            @click="setAllValues('AO')"
-            type="button"
-            class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs transition flex items-center space-x-1.5 cursor-pointer"
-          >
-            <Sparkles class="w-3.5 h-3.5 text-purple-600" />
-            <span>Mark All AO</span>
-          </button>
-
-          <button 
-            @click="saveAdvisoryValues()" 
-            :disabled="!advisoryData.has_advisory" 
-            type="button" 
-            class="px-4 py-2 rounded-xl text-xs font-semibold bg-purple-900 hover:bg-purple-800 disabled:opacity-50 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer"
-          >
-            <Check class="w-4 h-4" />
-            <span>Save SF9 Ratings</span>
-          </button>
-        </div>
-      </div>
-
-      <div v-if="advisoryData.has_advisory" class="space-y-4">
-        <!-- Advisory Section Card -->
-        <div class="p-4 rounded-2xl bg-purple-50/70 border border-purple-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div>
-            <div class="font-extrabold text-purple-950 text-sm">
-              {{ advisoryData.section?.name }} ({{ advisoryData.section?.grade_level_name }})
-            </div>
-            <div class="text-slate-600 text-[11px] mt-0.5">
-              Room: <strong>{{ advisoryData.section?.room }}</strong> | Total Learners: <strong>{{ advisoryData.total_learners }}</strong>
-            </div>
-          </div>
-        </div>
-
-        <!-- SF9 Core Values Matrix Table -->
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs text-left border-collapse min-w-[700px]">
-            <thead>
-              <tr class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
-                <th class="py-3 px-4 w-12 text-slate-400 font-mono">#</th>
-                <th class="py-3 px-4">Learner Name</th>
-                <th class="py-3 px-4 text-center">Maka-Diyos</th>
-                <th class="py-3 px-4 text-center">Makatao</th>
-                <th class="py-3 px-4 text-center">Makakalikasan</th>
-                <th class="py-3 px-4 text-center">Makabansa</th>
-                <th class="py-3 px-4 text-center font-mono">Gen. Average</th>
-                <th class="py-3 px-4 text-center">Academic Status</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-              <tr v-for="(l, idx) in advisoryData.learners" :key="l.student_id" class="hover:bg-slate-50/80 transition">
-                <td class="py-3.5 px-4 font-mono text-slate-400 text-[11px]">{{ idx + 1 }}</td>
-                <td class="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">{{ l.full_name }}</td>
-
-                <!-- Maka-Diyos Select -->
-                <td class="py-2.5 px-3 text-center">
-                  <select v-model="l.values_ratings.maka_diyos_q1" class="px-2.5 py-1 rounded-lg border border-slate-300 text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none cursor-pointer">
-                    <option value="AO">AO</option>
-                    <option value="SO">SO</option>
-                    <option value="RO">RO</option>
-                    <option value="NO">NO</option>
-                  </select>
-                </td>
-
-                <!-- Makatao Select -->
-                <td class="py-2.5 px-3 text-center">
-                  <select v-model="l.values_ratings.maka_tao_q1" class="px-2.5 py-1 rounded-lg border border-slate-300 text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none cursor-pointer">
-                    <option value="AO">AO</option>
-                    <option value="SO">SO</option>
-                    <option value="RO">RO</option>
-                    <option value="NO">NO</option>
-                  </select>
-                </td>
-
-                <!-- Makakalikasan Select -->
-                <td class="py-2.5 px-3 text-center">
-                  <select v-model="l.values_ratings.makakalikasan_q1" class="px-2.5 py-1 rounded-lg border border-slate-300 text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none cursor-pointer">
-                    <option value="AO">AO</option>
-                    <option value="SO">SO</option>
-                    <option value="RO">RO</option>
-                    <option value="NO">NO</option>
-                  </select>
-                </td>
-
-                <!-- Makabansa Select -->
-                <td class="py-2.5 px-3 text-center">
-                  <select v-model="l.values_ratings.makabansa_q1" class="px-2.5 py-1 rounded-lg border border-slate-300 text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none cursor-pointer">
-                    <option value="AO">AO</option>
-                    <option value="SO">SO</option>
-                    <option value="RO">RO</option>
-                    <option value="NO">NO</option>
-                  </select>
-                </td>
-
-                <td class="py-3.5 px-4 text-center font-mono font-bold text-slate-800">
-                  {{ l.general_average ? l.general_average.toFixed(2) : '--' }}
-                </td>
-
-                <!-- DepEd SARDO / Early Warning Academic Status -->
-                <td class="py-3.5 px-4 text-center whitespace-nowrap">
-                  <span 
-                    class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
-                    :class="{
-                      'bg-emerald-50 text-emerald-800 border border-emerald-200': l.academic_status === 'On Track',
-                      'bg-amber-50 text-amber-800 border border-amber-200': l.academic_status === 'Needs Support',
-                      'bg-rose-50 text-rose-800 border border-rose-200': l.academic_status === 'Critical SARDO'
-                    }"
-                  >
-                    {{ l.academic_status }}
-                    <span v-if="l.failing_subjects_count > 0" class="text-[9px] font-mono ml-1">({{ l.failing_subjects_count }} Failed)</span>
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div v-else class="py-16 text-center text-slate-400 text-xs border border-dashed border-slate-200 rounded-3xl">
-        <Award class="w-10 h-10 text-slate-300 mx-auto mb-2" />
-        <div class="font-bold text-slate-700">No Advisory Section Assigned</div>
-        <p class="text-slate-400 mt-1">This faculty account is currently assigned purely for subject instruction.</p>
-      </div>
-    </div>
-
-    <!-- ======================================================== -->
-    <!-- TAB 5: DAILY ATTENDANCE TRACKER (SF2)                    -->
-    <!-- ======================================================== -->
-    <div v-if="activeTab === 'attendance'" class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-        <div>
-          <h2 class="text-base font-bold text-slate-900">Daily Attendance Log (DepEd SF2)</h2>
-          <p class="text-xs text-slate-500">Record daily learner attendance status (Present, Absent, Late, Excused).</p>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2">
-          <input 
-            v-model="attendanceDate" 
-            type="date" 
-            class="px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
-          />
-          <button 
-            @click="markAllPresent()" 
-            type="button" 
-            class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 transition cursor-pointer"
-          >
-            Mark All Present
-          </button>
-          <button 
-            @click="saveAttendanceLog()" 
-            type="button" 
-            class="px-4 py-1.5 rounded-xl text-xs font-semibold bg-blue-900 hover:bg-blue-800 text-white shadow-xs transition cursor-pointer"
-          >
-            Save Attendance Log
-          </button>
-        </div>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-xs text-left border-collapse min-w-[500px]">
-          <thead>
-            <tr class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
-              <th class="py-3 px-4 w-12 text-slate-400 font-mono">#</th>
-              <th class="py-3 px-4">Learner Name</th>
-              <th class="py-3 px-4 font-mono">LRN</th>
-              <th class="py-3 px-4 text-center">Status</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr v-for="(s, idx) in attendanceStudents" :key="s.student_id" class="hover:bg-slate-50/80 transition">
-              <td class="py-3.5 px-4 font-mono text-slate-400 text-[11px]">{{ idx + 1 }}</td>
-              <td class="py-3.5 px-4 font-bold text-slate-900">{{ s.full_name }}</td>
-              <td class="py-3.5 px-4 font-mono text-slate-600">{{ s.lrn || 'N/A' }}</td>
-              <td class="py-2.5 px-4 text-center">
-                <div class="inline-flex rounded-xl p-1 bg-slate-100 space-x-1">
-                  <button 
-                    v-for="st in ['Present', 'Late', 'Absent', 'Excused']" 
-                    :key="st"
-                    @click="s.attendance_status = st"
-                    type="button"
-                    :class="[
-                      'px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition cursor-pointer',
-                      s.attendance_status === st 
-                        ? (st === 'Present' ? 'bg-emerald-600 text-white shadow-2xs' : st === 'Late' ? 'bg-amber-500 text-white shadow-2xs' : st === 'Absent' ? 'bg-rose-600 text-white shadow-2xs' : 'bg-blue-600 text-white shadow-2xs')
-                        : 'text-slate-500 hover:text-slate-800'
-                    ]"
-                  >
-                    {{ st }}
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
 
     <!-- Quick Batch Fill Grades Modal -->
     <div v-if="showQuickFillModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
@@ -2489,9 +2271,7 @@ const selectedClassKey = ref('');
 const currentClassData = ref({ section: null, subject: null, students: [] });
 const searchGradeQuery = ref('');
 
-const advisoryData = ref({ has_advisory: false, section: null, learners: [] });
-const attendanceDate = ref(new Date().toISOString().split('T')[0]);
-const attendanceStudents = ref([]);
+
 
 // Quick fill modal state
 const showQuickFillModal = ref(false);
@@ -2524,9 +2304,6 @@ const loadTeacherDashboard = async () => {
       }
       resetDistributionTargets();
     }
-
-    // Load Advisory Data
-    await loadAdvisorySection();
   } catch (err) {
     console.error('Failed to load teacher dashboard:', err);
     errorMessage.value = err.message || 'Failed to load teacher portal data.';
@@ -2629,12 +2406,6 @@ const loadClassStudents = async (sectionId, subjectId) => {
     } else {
       quickFillQuarter.value = 'q1';
     }
-
-    // Prepare attendance list clone
-    attendanceStudents.value = (res.data.students || []).map(s => ({
-      ...s,
-      attendance_status: 'Present'
-    }));
   } catch (err) {
     console.error('Failed to load class students:', err);
   }
@@ -2752,74 +2523,6 @@ const saveGradesBatch = async () => {
     errorMessage.value = 'Failed to save grades: ' + (err.message || 'Error occurred.');
   } finally {
     isSavingGrades.value = false;
-  }
-};
-
-const loadAdvisorySection = async () => {
-  try {
-    const res = await api.getTeacherAdvisorySection();
-    advisoryData.value = res.data;
-  } catch (err) {
-    console.error('Failed to load advisory section:', err);
-  }
-};
-
-const setAllValues = (rating) => {
-  if (!advisoryData.value.learners) return;
-  advisoryData.value.learners.forEach(l => {
-    l.values_ratings = {
-      maka_diyos_q1: rating,
-      maka_diyos_q2: rating,
-      maka_tao_q1: rating,
-      maka_tao_q2: rating,
-      makakalikasan_q1: rating,
-      makakalikasan_q2: rating,
-      makabansa_q1: rating,
-      makabansa_q2: rating
-    };
-  });
-  feedbackMessage.value = `Marked all Core Values as ${rating} (${rating === 'AO' ? 'Always Observed' : rating}).`;
-  setTimeout(() => { feedbackMessage.value = ''; }, 3500);
-};
-
-const saveAdvisoryValues = async () => {
-  if (!advisoryData.value.section?.id) return;
-  try {
-    await api.saveTeacherAdvisoryValues({
-      section_id: advisoryData.value.section.id,
-      values: advisoryData.value.learners
-    });
-    feedbackMessage.value = 'DepEd SF9 Learner Core Values successfully recorded.';
-    setTimeout(() => { feedbackMessage.value = ''; }, 4000);
-  } catch (err) {
-    errorMessage.value = 'Failed to save values: ' + err.message;
-  }
-};
-
-const markAllPresent = () => {
-  attendanceStudents.value.forEach(s => {
-    s.attendance_status = 'Present';
-  });
-  feedbackMessage.value = 'Marked all enrolled learners as Present.';
-  setTimeout(() => { feedbackMessage.value = ''; }, 3500);
-};
-
-const saveAttendanceLog = async () => {
-  if (!selectedClassKey.value) {
-    errorMessage.value = 'Please select a class section first.';
-    return;
-  }
-  const [secId] = selectedClassKey.value.split('-').map(Number);
-  try {
-    const res = await api.saveTeacherAttendance({
-      section_id: secId,
-      date: attendanceDate.value,
-      attendance: attendanceStudents.value
-    });
-    feedbackMessage.value = res.message || 'Attendance logged successfully.';
-    setTimeout(() => { feedbackMessage.value = ''; }, 4000);
-  } catch (err) {
-    errorMessage.value = 'Failed to save attendance: ' + err.message;
   }
 };
 

@@ -13,7 +13,6 @@ import AdmissionProcedureView from '../views/applicant/AdmissionProcedureView.vu
 import RegistrarDashboardView from '../views/registrar/RegistrarDashboardView.vue';
 import TreasuryDashboardView from '../views/treasury/TreasuryDashboardView.vue';
 import CoordinatorDashboardView from '../views/coordinator/CoordinatorDashboardView.vue';
-import RecordsDashboardView from '../views/records/RecordsDashboardView.vue';
 import StudentDashboardView from '../views/student/StudentDashboardView.vue';
 import TeacherDashboardView from '../views/teacher/TeacherDashboardView.vue';
 import AdminDashboardView from '../views/admin/AdminDashboardView.vue';
@@ -34,7 +33,7 @@ const routes = [
   { path: '/registrar', name: 'RegistrarDashboard', component: RegistrarDashboardView, meta: { requiresAuth: true, roles: ['registrar', 'admin'] } },
   { path: '/treasury', name: 'TreasuryDashboard', component: TreasuryDashboardView, meta: { requiresAuth: true, roles: ['treasury', 'admin'] } },
   { path: '/coordinator', name: 'CoordinatorDashboard', component: CoordinatorDashboardView, meta: { requiresAuth: true, roles: ['coordinator', 'admin'] } },
-  { path: '/records', name: 'RecordsDashboard', component: RecordsDashboardView, meta: { requiresAuth: true, roles: ['records', 'admin', 'registrar'] } },
+  { path: '/records', redirect: '/registrar' },
   { path: '/teacher', name: 'TeacherDashboard', component: TeacherDashboardView, meta: { requiresAuth: true, roles: ['teacher'] } },
   { path: '/student', name: 'StudentDashboard', component: StudentDashboardView, meta: { requiresAuth: true, roles: ['student'] } },
   { path: '/admin', name: 'AdminDashboard', component: AdminDashboardView, meta: { requiresAuth: true, roles: ['admin'] } },
@@ -57,7 +56,7 @@ export const getRoleRouteName = (roleSlug) => {
     case 'registrar': return 'RegistrarDashboard';
     case 'treasury': return 'TreasuryDashboard';
     case 'coordinator': return 'CoordinatorDashboard';
-    case 'records': return 'RecordsDashboard';
+    case 'records': return 'RegistrarDashboard';
     case 'teacher': return 'TeacherDashboard';
     case 'student': return 'StudentDashboard';
     case 'admin': return 'AdminDashboard';
@@ -71,7 +70,7 @@ export const getRoleRoutePath = (roleSlug) => {
     case 'registrar': return '/registrar';
     case 'treasury': return '/treasury';
     case 'coordinator': return '/coordinator';
-    case 'records': return '/records';
+    case 'records': return '/registrar';
     case 'teacher': return '/teacher';
     case 'student': return '/student';
     case 'admin': return '/admin';
