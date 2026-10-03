@@ -106,6 +106,33 @@ async function testLoginAndCurriculum() {
   console.log("Sections Response Raw:\n", secRes);
   const secJson = JSON.parse(secRes);
   console.log("Sections count:", secJson.data?.sections?.length || secJson.data?.length);
+
+  // 5. Test SMTP dispatch
+  const smtpPayload = JSON.stringify({
+    type: 'registration',
+    recipient_email: 'jerjerkings09@gmail.com',
+    first_name: 'Juan',
+    last_name: 'Dela Cruz'
+  });
+  const smtpRes = await new Promise((resolve, reject) => {
+    const sReq = http.request('http://bsla.infy.click/backend/api/index.php?route=auth/test-smtp', {
+      method: 'POST',
+      headers: {
+        'User-Agent': userAgent,
+        'Cookie': `__test=${testCookie}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(smtpPayload)
+      }
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve(data));
+    });
+    sReq.on('error', reject);
+    sReq.write(smtpPayload);
+    sReq.end();
+  });
+  console.log("Live SMTP Dispatch Response:\n", smtpRes);
 }
 
 testLoginAndCurriculum().catch(console.error);

@@ -78,8 +78,14 @@ class PayMongoController {
         $protocol = $isHttps ? 'https://' : 'http://';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         
-        // Target client path in sia-project2
-        $clientBase = $protocol . $host . '/sia-project2/frontend/dist/#/applicant/procedure';
+        $reqUri = $_SERVER['REQUEST_URI'] ?? '';
+        if (strpos($reqUri, '/sia-project2/') !== false) {
+            $clientBase = $protocol . $host . '/sia-project2/frontend/dist/#/applicant/procedure';
+        } elseif (strpos($reqUri, '/sia-project/') !== false) {
+            $clientBase = $protocol . $host . '/sia-project/frontend/dist/#/applicant/procedure';
+        } else {
+            $clientBase = $protocol . $host . '/dist/#/applicant/procedure';
+        }
         $successUrl = $clientBase . '?paymongo_status=success&session_id={CHECKOUT_SESSION_ID}';
         $cancelUrl = $clientBase . '?paymongo_status=cancelled';
 

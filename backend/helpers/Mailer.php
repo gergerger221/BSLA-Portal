@@ -28,20 +28,36 @@ class Mailer {
 
         $config = MailConfig::get();
 
-        // If mailer is disabled in config, record in logs and return mock success safely
+        // 1. Check if HTTP Email API is configured (Resend or Brevo - works on cloud hosts where SMTP sockets are blocked)
+        $resendKey = trim((string)\App\Config\Env::get('RESEND_API_KEY', ''));
+        $brevoKey = trim((string)\App\Config\Env::get('BREVO_API_KEY', ''));
+
+        if (!empty($resendKey)) {
+            return self::sendViaResend($resendKey, $toEmail, $toName, $subject, $htmlBody, $config);
+        }
+        if (!empty($brevoKey)) {
+            return self::sendViaBrevo($brevoKey, $toEmail, $toName, $subject, $htmlBody, $config);
+        }
+
+        // 2. If mailer is disabled in config, record in logs and return simulated success
         if (empty($config['enabled'])) {
-            self::logMail($toEmail, $subject, 'SKIPPED', 'SMTP sending disabled in MailConfig.php (Simulated Success)');
+            self::logMail($toEmail, $subject, 'SIMULATED', 'SMTP sending disabled in MailConfig.php (Simulation Mode)');
             return [
                 'success' => true, 
-                'message' => 'SMTP is in simulated mode. Enable live SMTP in backend/config/MailConfig.php when ready.',
+                'message' => 'Email simulated successfully. Set SMTP_ENABLED=true or provide RESEND_API_KEY in .env for live inbox delivery.',
                 'simulated' => true
             ];
         }
 
-        // Require vendor autoloader if not already loaded
+        // 3. Send via PHPMailer SMTP
         $autoloader = __DIR__ . '/../vendor/autoload.php';
         if (file_exists($autoloader)) {
             require_once $autoloader;
+        }
+
+        if (!class_exists('PHPMailer\\PHPMailer\\PHPMailer')) {
+            self::logMail($toEmail, $subject, 'FAILED', 'PHPMailer package not found in vendor.');
+            return ['success' => false, 'message' => 'PHPMailer package not found.'];
         }
 
         $mail = new PHPMailer(true);
@@ -54,16 +70,18 @@ class Mailer {
             $mail->SMTPAuth   = $config['auth'];
             $mail->Username   = $config['username'];
             $mail->Password   = $config['password'];
-            $mail->SMTPSecure = $config['encryption'] === 'ssl' ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->SMTPSecure = ($config['encryption'] === 'ssl' || $config['port'] === 465) ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = $config['port'];
             $mail->CharSet    = 'UTF-8';
-            $mail->Timeout    = 10; // 10 seconds timeout
+            $mail->Timeout    = 10;
 
             // Sender & Recipient
-            $mail->setFrom($config['from_email'], $config['from_name']);
+            $fromEmail = !empty($config['from_email']) ? $config['from_email'] : ($config['username'] ?: 'no-reply@bsla.edu.ph');
+            $fromName  = !empty($config['from_name']) ? $config['from_name'] : 'BSLA Admissions';
+            $mail->setFrom($fromEmail, $fromName);
             $mail->addAddress($toEmail, $toName);
             if (!empty($config['reply_to'])) {
-                $mail->addReplyTo($config['reply_to'], $config['from_name']);
+                $mail->addReplyTo($config['reply_to'], $fromName);
             }
 
             // Content
@@ -73,16 +91,89 @@ class Mailer {
             $mail->AltBody = !empty($altBody) ? $altBody : strip_tags($htmlBody);
 
             $mail->send();
-            self::logMail($toEmail, $subject, 'SENT', 'Email successfully delivered via SMTP server.');
+            self::logMail($toEmail, $subject, 'SENT', 'Email successfully delivered via PHPMailer SMTP.');
 
-            return ['success' => true, 'message' => 'Email sent successfully via SMTP.'];
+            return ['success' => true, 'message' => 'Email sent successfully via PHPMailer SMTP.'];
         } catch (\Throwable $e) {
             $errorDetails = $mail->ErrorInfo ?: $e->getMessage();
             self::logMail($toEmail, $subject, 'FAILED', $errorDetails);
-            
-            // Fail-safe: Log error without crashing the application flow
-            return ['success' => false, 'message' => 'Failed to dispatch email: ' . $errorDetails];
+            return ['success' => false, 'message' => 'Failed to dispatch email via SMTP: ' . $errorDetails];
         }
+    }
+
+    /**
+     * Send email using Resend REST API (via HTTPS Port 443)
+     */
+    private static function sendViaResend(string $apiKey, string $toEmail, string $toName, string $subject, string $htmlBody, array $config): array {
+        $fromEmail = !empty($config['from_email']) ? $config['from_email'] : 'onboarding@resend.dev';
+        $fromName = !empty($config['from_name']) ? $config['from_name'] : 'BSLA Admissions';
+        $payload = [
+            'from'    => "{$fromName} <{$fromEmail}>",
+            'to'      => [$toEmail],
+            'subject' => $subject,
+            'html'    => $htmlBody
+        ];
+
+        $ch = curl_init('https://api.resend.com/emails');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Bearer ' . $apiKey,
+            'Content-Type: application/json'
+        ]);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlErr || $httpCode >= 400) {
+            $err = $curlErr ?: "HTTP {$httpCode}: {$response}";
+            self::logMail($toEmail, $subject, 'FAILED', "Resend API Error: {$err}");
+            return ['success' => false, 'message' => 'Resend API failed: ' . $err];
+        }
+
+        self::logMail($toEmail, $subject, 'SENT', 'Email delivered via Resend HTTP API.');
+        return ['success' => true, 'message' => 'Email sent successfully via Resend API.'];
+    }
+
+    /**
+     * Send email using Brevo REST API (via HTTPS Port 443)
+     */
+    private static function sendViaBrevo(string $apiKey, string $toEmail, string $toName, string $subject, string $htmlBody, array $config): array {
+        $fromEmail = !empty($config['from_email']) ? $config['from_email'] : 'admissions@bsla.edu.ph';
+        $fromName = !empty($config['from_name']) ? $config['from_name'] : 'BSLA Admissions';
+        $payload = [
+            'sender'      => ['name' => $fromName, 'email' => $fromEmail],
+            'to'          => [['email' => $toEmail, 'name' => $toName]],
+            'subject'     => $subject,
+            'htmlContent' => $htmlBody
+        ];
+
+        $ch = curl_init('https://api.brevo.com/v3/smtp/email');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'api-key: ' . $apiKey,
+            'Content-Type: application/json',
+            'Accept: application/json'
+        ]);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlErr || $httpCode >= 400) {
+            $err = $curlErr ?: "HTTP {$httpCode}: {$response}";
+            self::logMail($toEmail, $subject, 'FAILED', "Brevo API Error: {$err}");
+            return ['success' => false, 'message' => 'Brevo API failed: ' . $err];
+        }
+
+        self::logMail($toEmail, $subject, 'SENT', 'Email delivered via Brevo HTTP API.');
+        return ['success' => true, 'message' => 'Email sent successfully via Brevo API.'];
     }
 
     /**
