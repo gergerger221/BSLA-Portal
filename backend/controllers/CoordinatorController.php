@@ -14,6 +14,7 @@ class CoordinatorController {
     public function getCurriculum(): void {
         Auth::requireRole(['coordinator', 'admin', 'registrar']);
         $db = Database::getConnection();
+        $this->ensureCurriculumSchema($db);
 
         $schoolYears = $db->query("SELECT id, code, name, is_active, is_locked, curriculum_locked, active_semester FROM school_years ORDER BY id DESC")->fetchAll();
         $activeSy = $db->query("SELECT * FROM school_years WHERE is_active = 1 LIMIT 1")->fetch();
@@ -989,6 +990,28 @@ class CoordinatorController {
         } catch (\Exception $e) {
             $db->rollBack();
             Response::error('Failed to transfer section: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Self-migrating database schema helper for curriculum and subjects table
+     */
+    private function ensureCurriculumSchema(\PDO $db): void {
+        try {
+            $cols = [
+                'school_year_id'  => "ALTER TABLE subjects ADD COLUMN school_year_id INT(11) NULL DEFAULT NULL AFTER prerequisite_id",
+                'approval_status' => "ALTER TABLE subjects ADD COLUMN approval_status ENUM('Approved','Pending','Rejected') DEFAULT 'Approved' AFTER is_active",
+                'proposed_by'     => "ALTER TABLE subjects ADD COLUMN proposed_by INT(11) NULL DEFAULT NULL AFTER approval_status",
+                'description'     => "ALTER TABLE subjects ADD COLUMN description TEXT NULL AFTER title"
+            ];
+            foreach ($cols as $col => $sql) {
+                $check = $db->query("SHOW COLUMNS FROM subjects LIKE '{$col}'")->fetch();
+                if (!$check) {
+                    $db->exec($sql);
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log("[Curriculum-Schema] Schema ensure error: " . $e->getMessage());
         }
     }
 }

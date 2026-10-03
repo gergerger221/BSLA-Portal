@@ -3447,17 +3447,26 @@ const strandOverallStats = computed(() => {
 const loadData = async () => {
   try {
     const currParam = selectedCurriculumSyId.value ? `school_year_id=${selectedCurriculumSyId.value}` : '';
-    const [currRes, secRes] = await Promise.all([
+    const [currRes, secRes] = await Promise.allSettled([
       api.getCurriculum(currParam),
       api.getSections()
     ]);
-    curriculumData.value = currRes.data;
-    sectionsData.value = secRes.data;
-    if (currRes.data?.selected_school_year?.id && !selectedCurriculumSyId.value) {
-      selectedCurriculumSyId.value = currRes.data.selected_school_year.id;
+    if (currRes.status === 'fulfilled' && currRes.value?.data) {
+      curriculumData.value = currRes.value.data;
+      if (currRes.value.data?.selected_school_year?.id && !selectedCurriculumSyId.value) {
+        selectedCurriculumSyId.value = currRes.value.data.selected_school_year.id;
+      }
+      if (currRes.value.data?.active_school_year?.active_semester && isCurrentSectionSHS.value) {
+        selectedScheduleSemester.value = currRes.value.data.active_school_year.active_semester;
+      }
+    } else if (currRes.status === 'rejected') {
+      console.error('Failed to load curriculum:', currRes.reason);
     }
-    if (currRes.data?.active_school_year?.active_semester && isCurrentSectionSHS.value) {
-      selectedScheduleSemester.value = currRes.data.active_school_year.active_semester;
+
+    if (secRes.status === 'fulfilled' && secRes.value?.data) {
+      sectionsData.value = secRes.value.data;
+    } else if (secRes.status === 'rejected') {
+      console.error('Failed to load sections:', secRes.reason);
     }
   } catch (err) {
     console.error('Failed to load coordinator data:', err);
