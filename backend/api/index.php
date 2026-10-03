@@ -7,6 +7,19 @@ if (!ob_get_level()) {
     ob_start();
 }
 
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        if (ob_get_length()) ob_clean();
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'success' => false,
+            'message' => 'Fatal PHP Error: ' . $error['message'] . ' in ' . basename($error['file']) . ':' . $error['line'],
+            'data' => null
+        ]);
+    }
+});
+
 // Vendor autoloader for PHPMailer and 3rd party packages
 if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
     require_once __DIR__ . '/../vendor/autoload.php';
