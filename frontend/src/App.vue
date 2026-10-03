@@ -573,8 +573,8 @@ const breadcrumbActiveTabName = computed(() => {
     return 'Class Schedule & Subject Timetable';
   }
   if (path.startsWith('/teacher')) {
-    if (tab === 'grading') return 'Quarterly Grading Sheet (Q1–Q4)';
     if (tab === 'roster') return 'Class Masterlists & Student Directory';
+    if (tab === 'lms') return 'Classroom & LMS Modules';
     return 'Weekly Schedule & Teaching Load';
   }
   if (path.startsWith('/admission')) {

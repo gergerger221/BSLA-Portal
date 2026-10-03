@@ -12,7 +12,7 @@
           {{ teacherProfile?.first_name ? `Prof. ${teacherProfile.first_name} ${teacherProfile.last_name}` : 'Teacher & Faculty Portal' }}
         </h1>
         <p class="text-xs text-slate-500 mt-0.5">
-          Quarterly Grading Sheet (Q1–Q4), Weekly Bell Timetable, Classroom LMS, and Section Masterlists.
+          Weekly Bell Timetable, Class Masterlists, and Classroom LMS Modules.
         </p>
       </div>
 
@@ -84,14 +84,14 @@
         <span class="text-[10px] text-slate-400">Total learners across sections</span>
       </div>
 
-      <!-- Card 4: Quarterly Grading Summary -->
+      <!-- Card 4: Classroom LMS Modules -->
       <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Grading Status</span>
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono">Q1 - Q4</span>
+          <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Classroom LMS</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200 font-mono">Modules</span>
         </div>
-        <strong class="text-2xl font-bold text-slate-900 font-mono mt-1 block">{{ teachingClasses.length }}</strong>
-        <span class="text-[10px] text-slate-400">Class grading rosters active</span>
+        <strong class="text-2xl font-bold text-slate-900 font-mono mt-1 block">{{ lmsModules.length + lmsAssignments.length }}</strong>
+        <span class="text-[10px] text-slate-400">Handouts & class tasks active</span>
       </div>
     </div>
 
@@ -790,269 +790,7 @@
       </div>
     </div>
 
-    <!-- ======================================================== -->
-    <!-- TAB 2: ELECTRONIC CLASS RECORD (E-CLASS RECORD & GRADES) -->
-    <!-- ======================================================== -->
-    <div v-if="activeTab === 'grading'" class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
-      
-      <!-- Top Action & Selection Bar -->
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-        <div>
-          <div class="flex items-center space-x-2">
-            <h2 class="text-base font-bold text-slate-900">Quarterly Grading Sheet (Q1–Q4)</h2>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-900 font-mono">
-              DepEd Order 8, s. 2015
-            </span>
-          </div>
-          <p class="text-xs text-slate-500 mt-0.5">
-            Encode quarterly grades (0–100). Passing mark is 75.00. Final ratings calculate dynamically according to DepEd curriculum guidelines.
-          </p>
-        </div>
 
-        <div class="flex flex-wrap items-center gap-2.5">
-          <!-- Departmentalized Class Selector Dropdown -->
-          <select 
-            v-model="selectedClassKey" 
-            @change="handleClassChange()"
-            class="px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer shadow-2xs"
-          >
-            <option value="">-- Select Class Section & Subject --</option>
-            <optgroup label="Junior High School (Full Year Learning Areas)" v-if="jhsClasses.length > 0">
-              <option 
-                v-for="c in jhsClasses" 
-                :key="`${c.section_id}-${c.subject_id}`" 
-                :value="`${c.section_id}-${c.subject_id}`"
-              >
-                {{ c.grade_level_code }} - {{ c.section_name }} : {{ c.subject_name }} ({{ c.subject_classification || 'Core' }})
-              </option>
-            </optgroup>
-            <optgroup 
-              :label="`Senior High School - 1st Semester${activeSchoolYear?.active_semester === '1st Semester' ? ' (Active Term)' : ' (Archived)'}`" 
-              v-if="shs1stSemClasses.length > 0"
-            >
-              <option 
-                v-for="c in shs1stSemClasses" 
-                :key="`${c.section_id}-${c.subject_id}`" 
-                :value="`${c.section_id}-${c.subject_id}`"
-              >
-                {{ c.grade_level_code }} - {{ c.section_name }} : {{ c.subject_name }} ({{ c.subject_classification || 'Core' }}) {{ activeSchoolYear?.active_semester === '1st Semester' ? '' : '🔒 (Archived)' }}
-              </option>
-            </optgroup>
-            <optgroup 
-              :label="`Senior High School - 2nd Semester${activeSchoolYear?.active_semester === '2nd Semester' ? ' (Active Term)' : ' (Archived)'}`" 
-              v-if="shs2ndSemClasses.length > 0"
-            >
-              <option 
-                v-for="c in shs2ndSemClasses" 
-                :key="`${c.section_id}-${c.subject_id}`" 
-                :value="`${c.section_id}-${c.subject_id}`"
-              >
-                {{ c.grade_level_code }} - {{ c.section_name }} : {{ c.subject_name }} ({{ c.subject_classification || 'Core' }}) {{ activeSchoolYear?.active_semester === '2nd Semester' ? '' : '🔒 (Archived)' }}
-              </option>
-            </optgroup>
-          </select>
-
-          <!-- Quick Fill Helper Dropdown -->
-          <button 
-            v-if="selectedClassKey"
-            @click="showQuickFillModal = true"
-            type="button"
-            class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs transition flex items-center space-x-1.5 cursor-pointer"
-          >
-            <Sparkles class="w-3.5 h-3.5 text-amber-500" />
-            <span>Quick Batch Fill</span>
-          </button>
-
-          <!-- Save Grades Button -->
-          <button 
-            @click="saveGradesBatch()" 
-            :disabled="isSavingGrades || !selectedClassKey" 
-            type="button" 
-            class="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer"
-          >
-            <Check class="w-4 h-4" />
-            <span>{{ isSavingGrades ? 'Saving Grades...' : 'Save & Submit Grades' }}</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Class Active Header Details -->
-      <div v-if="currentClassData.section" class="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-        <div class="space-y-0.5">
-          <div class="font-extrabold text-blue-950 text-sm">
-            {{ currentClassData.section.name }} • {{ currentClassData.subject.name }}
-          </div>
-          <div class="text-slate-600 text-[11px]">
-            Grade Level: <strong class="text-slate-900">{{ currentClassData.section.grade_level_name }}</strong> | 
-            Classification: <strong class="text-slate-900">{{ currentClassData.subject.classification }}</strong> | 
-            Term: <strong class="text-slate-900">{{ currentClassData.subject.semester || 'Full Academic Year' }}</strong>
-          </div>
-        </div>
-
-        <!-- Filter / Search In Roster -->
-        <div class="relative w-full sm:w-64">
-          <Search class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-          <input 
-            v-model="searchGradeQuery" 
-            type="text" 
-            placeholder="Search student or LRN..." 
-            class="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          />
-        </div>
-      </div>
-
-      <!-- Electronic Class Record Table -->
-      <div v-if="selectedClassKey" class="overflow-x-auto">
-        <table class="w-full text-xs text-left border-collapse min-w-[780px]">
-          <thead>
-            <tr class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
-              <th class="py-3 px-4 w-12 text-slate-400 font-mono">#</th>
-              <th class="py-3 px-4">Learner Name</th>
-              <th class="py-3 px-4 font-mono">LRN / Student No</th>
-              <th class="py-3 px-4 text-center">Gender</th>
-              
-              <!-- Adaptive DepEd Quarterly Headers -->
-              <th class="py-3 px-3 text-center w-24" :class="{ 'opacity-40': isSHS2ndSem }">
-                Q1 (1st)
-                <span v-if="isSHS2ndSem" class="block text-[9px] font-normal text-slate-400 font-mono">N/A (2nd Sem)</span>
-              </th>
-              <th class="py-3 px-3 text-center w-24" :class="{ 'opacity-40': isSHS2ndSem }">
-                Q2 (2nd)
-                <span v-if="isSHS2ndSem" class="block text-[9px] font-normal text-slate-400 font-mono">N/A (2nd Sem)</span>
-              </th>
-              <th class="py-3 px-3 text-center w-24" :class="{ 'opacity-40': isSHS1stSem }">
-                Q3 (3rd)
-                <span v-if="isSHS1stSem" class="block text-[9px] font-normal text-slate-400 font-mono">N/A (1st Sem)</span>
-              </th>
-              <th class="py-3 px-3 text-center w-24" :class="{ 'opacity-40': isSHS1stSem }">
-                Q4 (4th)
-                <span v-if="isSHS1stSem" class="block text-[9px] font-normal text-slate-400 font-mono">N/A (1st Sem)</span>
-              </th>
-
-              <!-- Adaptive Final Grade Header -->
-              <th class="py-3 px-4 text-center w-32">
-                {{ isSHS ? (isSHS2ndSem ? 'Semestral (Sem 2)' : 'Semestral (Sem 1)') : 'Annual Final' }}
-              </th>
-              <th class="py-3 px-4 text-center">Remarks</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr v-for="(s, idx) in filteredClassStudents" :key="s.student_id" class="hover:bg-slate-50/80 transition">
-              <td class="py-3.5 px-4 font-mono text-slate-400 text-[11px]">{{ idx + 1 }}</td>
-              <td class="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">{{ s.full_name }}</td>
-              <td class="py-3.5 px-4 font-mono text-slate-600 whitespace-nowrap text-[11px]">
-                <div>{{ s.lrn || 'No LRN' }}</div>
-                <div class="text-[10px] text-slate-400">{{ s.student_no }}</div>
-              </td>
-              <td class="py-3.5 px-4 text-center">
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold" :class="s.gender === 'Female' ? 'bg-pink-50 text-pink-700 border border-pink-200' : 'bg-blue-50 text-blue-700 border border-blue-200'">
-                  {{ s.gender }}
-                </span>
-              </td>
-
-              <!-- Q1 Input (Active for JHS and SHS 1st Sem) -->
-              <td class="py-2.5 px-2 text-center">
-                <input 
-                  v-if="!isSHS2ndSem"
-                  v-model.number="s.q1" 
-                  @input="recalculateStudentGrade(s)"
-                  type="number" 
-                  min="0" 
-                  max="100" 
-                  step="0.01"
-                  placeholder="--"
-                  class="w-18 px-2 py-1.5 rounded-lg border border-slate-300 text-center font-mono font-bold text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none focus:bg-blue-50"
-                />
-                <span v-else class="text-[10px] font-mono font-bold text-slate-400 py-1.5 px-2 rounded-lg bg-slate-100 inline-block w-18" title="Not applicable for 2nd Semester subjects">N/A</span>
-              </td>
-
-              <!-- Q2 Input (Active for JHS and SHS 1st Sem) -->
-              <td class="py-2.5 px-2 text-center">
-                <input 
-                  v-if="!isSHS2ndSem"
-                  v-model.number="s.q2" 
-                  @input="recalculateStudentGrade(s)"
-                  type="number" 
-                  min="0" 
-                  max="100" 
-                  step="0.01"
-                  placeholder="--"
-                  class="w-18 px-2 py-1.5 rounded-lg border border-slate-300 text-center font-mono font-bold text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none focus:bg-blue-50"
-                />
-                <span v-else class="text-[10px] font-mono font-bold text-slate-400 py-1.5 px-2 rounded-lg bg-slate-100 inline-block w-18" title="Not applicable for 2nd Semester subjects">N/A</span>
-              </td>
-
-              <!-- Q3 Input (Active for JHS and SHS 2nd Sem) -->
-              <td class="py-2.5 px-2 text-center">
-                <input 
-                  v-if="!isSHS1stSem"
-                  v-model.number="s.q3" 
-                  @input="recalculateStudentGrade(s)"
-                  type="number" 
-                  min="0" 
-                  max="100" 
-                  step="0.01"
-                  placeholder="--"
-                  class="w-18 px-2 py-1.5 rounded-lg border border-slate-300 text-center font-mono font-bold text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none focus:bg-blue-50"
-                />
-                <span v-else class="text-[10px] font-mono font-bold text-slate-400 py-1.5 px-2 rounded-lg bg-slate-100 inline-block w-18" title="Not applicable for 1st Semester subjects">N/A</span>
-              </td>
-
-              <!-- Q4 Input (Active for JHS and SHS 2nd Sem) -->
-              <td class="py-2.5 px-2 text-center">
-                <input 
-                  v-if="!isSHS1stSem"
-                  v-model.number="s.q4" 
-                  @input="recalculateStudentGrade(s)"
-                  type="number" 
-                  min="0" 
-                  max="100" 
-                  step="0.01"
-                  placeholder="--"
-                  class="w-18 px-2 py-1.5 rounded-lg border border-slate-300 text-center font-mono font-bold text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none focus:bg-blue-50"
-                />
-                <span v-else class="text-[10px] font-mono font-bold text-slate-400 py-1.5 px-2 rounded-lg bg-slate-100 inline-block w-18" title="Not applicable for 1st Semester subjects">N/A</span>
-              </td>
-
-              <!-- Final Grade (Computed) -->
-              <td class="py-3.5 px-4 text-center font-mono font-bold text-xs">
-                <span v-if="s.final_grade !== null" :class="s.final_grade >= 75 ? 'text-emerald-700' : 'text-rose-700'">
-                  {{ s.final_grade.toFixed(2) }}
-                </span>
-                <span v-else class="text-slate-300">--</span>
-              </td>
-
-              <!-- Remarks Badge -->
-              <td class="py-3.5 px-4 text-center">
-                <span 
-                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                  :class="{
-                    'bg-emerald-50 text-emerald-800 border border-emerald-200': s.remarks === 'Passed',
-                    'bg-rose-50 text-rose-800 border border-rose-200': s.remarks === 'Failed',
-                    'bg-slate-100 text-slate-600': s.remarks === 'Ongoing' || !s.remarks
-                  }"
-                >
-                  {{ s.remarks || 'Ongoing' }}
-                </span>
-              </td>
-            </tr>
-
-            <tr v-if="filteredClassStudents.length === 0">
-              <td colspan="10" class="py-12 text-center text-slate-400 text-xs">
-                <Users class="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                <div>No learners enrolled in this section match your search filter.</div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div v-else class="py-16 text-center text-slate-400 text-xs border border-dashed border-slate-200 rounded-3xl">
-        <BookOpen class="w-10 h-10 text-slate-300 mx-auto mb-3" />
-        <div class="font-bold text-slate-700 text-sm">Select a Class Section & Subject to begin grading</div>
-        <p class="text-slate-400 mt-1">Choose an assigned teaching load from the dropdown above to load the E-Class Record.</p>
-      </div>
-    </div>
 
     <!-- ======================================================== -->
     <!-- TAB 3: CLASS MASTERLISTS & STUDENT ROSTER                -->
@@ -1120,77 +858,7 @@
 
 
 
-    <!-- Quick Batch Fill Grades Modal -->
-    <div v-if="showQuickFillModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-200">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div class="flex items-center space-x-2">
-            <Sparkles class="w-5 h-5 text-amber-500" />
-            <h3 class="font-bold text-slate-900 text-base">Quick Fill Quarterly Scores</h3>
-          </div>
-          <button @click="showQuickFillModal = false" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
-        </div>
 
-        <p class="text-xs text-slate-500">
-          Quickly populate empty score fields for all learners in this class for rapid drafting.
-        </p>
-
-        <div class="space-y-3 text-xs">
-          <div>
-            <label class="font-semibold text-slate-700 block mb-1">Select Target Quarter</label>
-            <select v-model="quickFillQuarter" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              <!-- Adaptive Quarter Options -->
-              <template v-if="isSHS1stSem">
-                <option value="all">All Applicable Quarters (Q1 & Q2)</option>
-                <option value="q1">Quarter 1 (1st Quarter)</option>
-                <option value="q2">Quarter 2 (2nd Quarter)</option>
-              </template>
-              <template v-else-if="isSHS2ndSem">
-                <option value="all">All Applicable Quarters (Q3 & Q4)</option>
-                <option value="q3">Quarter 3 (3rd Quarter)</option>
-                <option value="q4">Quarter 4 (4th Quarter)</option>
-              </template>
-              <template v-else>
-                <option value="all">All Quarters (Q1 to Q4)</option>
-                <option value="q1">Quarter 1 (1st Quarter)</option>
-                <option value="q2">Quarter 2 (2nd Quarter)</option>
-                <option value="q3">Quarter 3 (3rd Quarter)</option>
-                <option value="q4">Quarter 4 (4th Quarter)</option>
-              </template>
-            </select>
-          </div>
-
-          <div>
-            <label class="font-semibold text-slate-700 block mb-1">Score Value (0 - 100)</label>
-            <input 
-              v-model.number="quickFillScore" 
-              type="number" 
-              min="0" 
-              max="100" 
-              placeholder="e.g. 85.00" 
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-          </div>
-        </div>
-
-        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
-          <button 
-            @click="showQuickFillModal = false" 
-            type="button" 
-            class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button 
-            @click="applyQuickFill()" 
-            type="button" 
-            class="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-900 hover:bg-blue-800 text-white shadow-xs transition cursor-pointer"
-          >
-            Apply to Class
-          </button>
-        </div>
-      </div>
-    </div>
 
     <!-- ======================================================== -->
     <!-- LMS MODAL 1: UPLOAD LEARNING MODULE / HANDOUT            -->
@@ -2238,7 +1906,7 @@ const errorMessage = ref('');
 
 // Auto-sync tab and trigger immediate LMS loading if LMS tab is selected
 watch(() => route.query.tab, async (newTab) => {
-  if (newTab && ['schedule', 'lms', 'grading', 'roster', 'advisory', 'attendance'].includes(newTab)) {
+  if (newTab && ['schedule', 'lms', 'roster'].includes(newTab)) {
     activeTab.value = newTab;
     if (newTab === 'lms' && selectedClassKey.value) {
       await loadLmsContent();
@@ -2272,11 +1940,6 @@ const currentClassData = ref({ section: null, subject: null, students: [] });
 const searchGradeQuery = ref('');
 
 
-
-// Quick fill modal state
-const showQuickFillModal = ref(false);
-const quickFillQuarter = ref('q1');
-const quickFillScore = ref(85);
 
 // Load Dashboard Data
 const loadTeacherDashboard = async () => {
@@ -2371,8 +2034,8 @@ const formatTime = (timeStr) => {
 
 const openClassRecord = async (sectionId, subjectId) => {
   selectedClassKey.value = `${sectionId}-${subjectId}`;
-  activeTab.value = 'grading';
-  router.push({ query: { tab: 'grading' } });
+  activeTab.value = 'roster';
+  router.push({ query: { tab: 'roster' } });
   await loadClassStudents(sectionId, subjectId);
 };
 
@@ -2399,132 +2062,12 @@ const loadClassStudents = async (sectionId, subjectId) => {
   try {
     const res = await api.getTeacherClassStudents(sectionId, subjectId);
     currentClassData.value = res.data;
-
-    // Adjust quick fill default quarter based on class
-    if (isSHS2ndSem.value) {
-      quickFillQuarter.value = 'q3';
-    } else {
-      quickFillQuarter.value = 'q1';
-    }
   } catch (err) {
     console.error('Failed to load class students:', err);
   }
 };
 
-const recalculateStudentGrade = (student) => {
-  const isSHSVal = isSHS.value;
-  const is1st = isSHS1stSem.value;
-  const is2nd = isSHS2ndSem.value;
 
-  const q1 = student.q1 !== null && student.q1 !== '' ? Number(student.q1) : null;
-  const q2 = student.q2 !== null && student.q2 !== '' ? Number(student.q2) : null;
-  const q3 = student.q3 !== null && student.q3 !== '' ? Number(student.q3) : null;
-  const q4 = student.q4 !== null && student.q4 !== '' ? Number(student.q4) : null;
-
-  if (isSHSVal) {
-    if (is2nd) {
-      if (q3 !== null && q4 !== null) {
-        student.final_grade = Math.round(((q3 + q4) / 2) * 100) / 100;
-        student.remarks = student.final_grade >= 75 ? 'Passed' : 'Failed';
-      } else {
-        student.final_grade = null;
-        student.remarks = 'Ongoing';
-      }
-    } else {
-      if (q1 !== null && q2 !== null) {
-        student.final_grade = Math.round(((q1 + q2) / 2) * 100) / 100;
-        student.remarks = student.final_grade >= 75 ? 'Passed' : 'Failed';
-      } else {
-        student.final_grade = null;
-        student.remarks = 'Ongoing';
-      }
-    }
-  } else {
-    // JHS Full Year (Q1 to Q4)
-    if (q1 !== null && q2 !== null && q3 !== null && q4 !== null) {
-      student.final_grade = Math.round(((q1 + q2 + q3 + q4) / 4) * 100) / 100;
-      student.remarks = student.final_grade >= 75 ? 'Passed' : 'Failed';
-    } else {
-      student.final_grade = null;
-      student.remarks = 'Ongoing';
-    }
-  }
-};
-
-const filteredClassStudents = computed(() => {
-  const list = currentClassData.value.students || [];
-  if (!searchGradeQuery.value.trim()) return list;
-  const q = searchGradeQuery.value.toLowerCase().trim();
-  return list.filter(s => 
-    s.full_name.toLowerCase().includes(q) ||
-    (s.lrn && s.lrn.toLowerCase().includes(q)) ||
-    (s.student_no && s.student_no.toLowerCase().includes(q))
-  );
-});
-
-const applyQuickFill = () => {
-  const score = Number(quickFillScore.value) || 0;
-  const list = currentClassData.value.students || [];
-
-  list.forEach(s => {
-    if (quickFillQuarter.value === 'all') {
-      if (isSHS.value) {
-        if (isSHS2ndSem.value) {
-          s.q3 = score;
-          s.q4 = score;
-        } else {
-          s.q1 = score;
-          s.q2 = score;
-        }
-      } else {
-        s.q1 = score;
-        s.q2 = score;
-        s.q3 = score;
-        s.q4 = score;
-      }
-    } else {
-      s[quickFillQuarter.value] = score;
-    }
-    recalculateStudentGrade(s);
-  });
-
-  showQuickFillModal.value = false;
-  feedbackMessage.value = `Applied score of ${score} to applicable quarters.`;
-  setTimeout(() => { feedbackMessage.value = ''; }, 3500);
-};
-
-const saveGradesBatch = async () => {
-  if (!selectedClassKey.value) return;
-  const [secId, subId] = selectedClassKey.value.split('-').map(Number);
-
-  isSavingGrades.value = true;
-  feedbackMessage.value = '';
-  errorMessage.value = '';
-
-  try {
-    const gradesPayload = (currentClassData.value.students || []).map(s => ({
-      student_id: s.student_id,
-      q1: s.q1,
-      q2: s.q2,
-      q3: s.q3,
-      q4: s.q4
-    }));
-
-    const res = await api.saveTeacherGrades({
-      section_id: secId,
-      subject_id: subId,
-      grades: gradesPayload
-    });
-
-    feedbackMessage.value = res.message || 'Grades saved successfully!';
-    setTimeout(() => { feedbackMessage.value = ''; }, 4000);
-    await loadClassStudents(secId, subId);
-  } catch (err) {
-    errorMessage.value = 'Failed to save grades: ' + (err.message || 'Error occurred.');
-  } finally {
-    isSavingGrades.value = false;
-  }
-};
 
 // ========================================================
 // LMS HUB STATE & METHODS

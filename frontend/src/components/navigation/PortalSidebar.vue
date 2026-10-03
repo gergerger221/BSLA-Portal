@@ -551,17 +551,11 @@ const categorizedRoleSections = computed(() => {
   if (currentPath === '/teacher' || slug === 'teacher') {
     return [
       {
-        title: 'OVERVIEW & SCHEDULE',
+        title: 'OVERVIEW & CLASSES',
         items: [
           { id: 'schedule', label: 'Weekly Schedule & Classes', icon: Clock, path: '/teacher', tab: 'schedule' },
+          { id: 'roster', label: 'Class Masterlists & Directory', icon: Users, path: '/teacher', tab: 'roster' },
           { id: 'lms', label: 'Classroom & LMS Modules', icon: BookOpen, path: '/teacher', tab: 'lms' }
-        ]
-      },
-      {
-        title: 'GRADING & MASTERLISTS',
-        items: [
-          { id: 'grading', label: 'Quarterly Grading Sheet', icon: FileSpreadsheet, path: '/teacher', tab: 'grading' },
-          { id: 'roster', label: 'Class Masterlists', icon: Users, path: '/teacher', tab: 'roster' }
         ]
       }
     ];
