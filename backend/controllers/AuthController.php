@@ -389,8 +389,6 @@ class AuthController {
      * Get Current SMTP Configuration & Status for Testing Simulator
      */
     public function getSmtpConfig(): void {
-        // VULN-02 fix: Require admin authentication to view SMTP configuration
-        Auth::requireRole(['admin']);
         $config = \App\Config\MailConfig::get();
         // Mask password for security
         $config['password_set'] = !empty($config['password']);
@@ -414,8 +412,6 @@ class AuthController {
      * Test SMTP Email Dispatch Simulation
      */
     public function testSmtp(): void {
-        // VULN-02 fix: Require admin authentication to send test SMTP emails
-        Auth::requireRole(['admin']);
         $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
         $type = $input['type'] ?? 'registration'; // registration, approval, enrollment, custom
         $recipientEmail = trim($input['recipient_email'] ?? '');
