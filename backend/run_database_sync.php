@@ -34,37 +34,109 @@ try {
     }
 
     $log("[2/4] Reading SQL file (" . round(filesize($sqlFile) / 1024, 2) . " KB)...");
-    $lines = file($sqlFile, FILE_IGNORE_NEW_LINES);
-    $log("  Total SQL lines: " . count($lines));
+    $content = file_get_contents($sqlFile);
+    
+    // Strip BOM if any
+    $content = preg_replace('/^\xEF\xBB\xBF/', '', $content);
+    if (str_starts_with($content, "\xFF\xFE") || str_starts_with($content, "\xFE\xFF")) {
+        $content = mb_convert_encoding($content, 'UTF-8', 'UTF-16');
+    }
 
     $log("[3/4] Executing database schema and data migration...");
     $db->exec("SET FOREIGN_KEY_CHECKS = 0;");
     $db->exec("SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';");
 
-    $query = '';
+    // Split into individual SQL queries accurately
+    $queries = [];
+    $currentQuery = '';
+    $inString = false;
+    $stringChar = '';
+    $escaped = false;
+    $inLineComment = false;
+    $inBlockComment = false;
+    $length = strlen($content);
+
+    for ($i = 0; $i < $length; $i++) {
+        $char = $content[$i];
+        $nextChar = ($i + 1 < $length) ? $content[$i + 1] : '';
+
+        // Line comment handling
+        if ($inLineComment) {
+            if ($char === "\n") {
+                $inLineComment = false;
+            }
+            continue;
+        }
+
+        // Block comment handling (unless conditional /*! ... */)
+        if ($inBlockComment) {
+            if ($char === '*' && $nextChar === '/') {
+                $inBlockComment = false;
+                $i++;
+            }
+            continue;
+        }
+
+        if (!$inString) {
+            if ($char === '-' && $nextChar === '-') {
+                $inLineComment = true;
+                $i++;
+                continue;
+            }
+            if ($char === '#' && ($i === 0 || $content[$i - 1] === "\n")) {
+                $inLineComment = true;
+                continue;
+            }
+            if ($char === '/' && $nextChar === '*' && ($i + 2 < $length && $content[$i + 2] !== '!')) {
+                $inBlockComment = true;
+                $i++;
+                continue;
+            }
+        }
+
+        if ($char === "'" || $char === '"' || $char === '`') {
+            if (!$inString) {
+                $inString = true;
+                $stringChar = $char;
+            } elseif ($char === $stringChar && !$escaped) {
+                $inString = false;
+            }
+        }
+
+        $escaped = ($char === '\\' && !$escaped);
+
+        if ($char === ';' && !$inString) {
+            $trimmed = trim($currentQuery);
+            if ($trimmed !== '') {
+                $queries[] = $trimmed;
+            }
+            $currentQuery = '';
+        } else {
+            $currentQuery .= $char;
+        }
+    }
+
+    if (trim($currentQuery) !== '') {
+        $queries[] = trim($currentQuery);
+    }
+
+    $log("  Parsed " . count($queries) . " SQL executable statements.");
+
     $executed = 0;
     $errors = 0;
     $errorMessages = [];
 
-    foreach ($lines as $line) {
-        $trimmed = trim($line);
-        if ($trimmed === '' || str_starts_with($trimmed, '--') || str_starts_with($trimmed, '/*')) {
-            continue;
-        }
-
-        $query .= $line . "\n";
-
-        if (str_ends_with($trimmed, ';')) {
-            try {
-                $db->exec($query);
-                $executed++;
-            } catch (PDOException $e) {
-                $errors++;
-                if (count($errorMessages) < 5) {
-                    $errorMessages[] = $e->getMessage();
-                }
+    foreach ($queries as $q) {
+        $cleanQ = trim($q);
+        if ($cleanQ === '') continue;
+        try {
+            $db->exec($cleanQ);
+            $executed++;
+        } catch (PDOException $e) {
+            $errors++;
+            if (count($errorMessages) < 5) {
+                $errorMessages[] = substr($e->getMessage(), 0, 150) . " | Query: " . substr($cleanQ, 0, 60);
             }
-            $query = '';
         }
     }
 

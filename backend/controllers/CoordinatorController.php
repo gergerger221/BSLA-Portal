@@ -766,9 +766,12 @@ class CoordinatorController {
         $db = Database::getConnection();
 
         $sections = $db->query("
-            SELECT sec.*, gl.name as grade_level_name, gl.category as grade_category,
+            SELECT sec.id, sec.school_year_id, sec.grade_level_id, sec.strand_id, sec.name, sec.room, sec.adviser_id,
+                   sec.max_capacity, sec.capacity, sec.is_active, sec.status, sec.created_at,
+                   gl.name as grade_level_name, gl.category as grade_category,
                    s.name as strand_name, s.code as strand_code,
-                   u.username as adviser_username, p.first_name as adviser_first, p.last_name as adviser_last
+                   u.username as adviser_username, p.first_name as adviser_first, p.last_name as adviser_last,
+                   (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = sec.id AND e.status IN ('Officially Enrolled', 'Enrolled')) as current_enrolled
             FROM sections sec
             JOIN grade_levels gl ON sec.grade_level_id = gl.id
             LEFT JOIN strands s ON sec.strand_id = s.id
@@ -790,6 +793,33 @@ class CoordinatorController {
             'sections' => $sections,
             'teachers' => $teachers
         ]);
+    }
+
+    /**
+     * Get Students enrolled in a specific section.
+     */
+    public function getSectionStudents(?int $sectionId = null): void {
+        Auth::requireRole(['coordinator', 'admin', 'registrar']);
+        $sectionId = $sectionId ?: (int)($_GET['section_id'] ?? $_POST['section_id'] ?? 0);
+        if (!$sectionId) {
+            Response::error('Section ID is required.');
+        }
+
+        $db = Database::getConnection();
+        $stmt = $db->prepare("
+            SELECT e.id as enrollment_id, e.enrollment_no, e.student_no, e.status as enrollment_status, e.lrn,
+                   u.id as student_id, u.username, u.email,
+                   p.first_name, p.last_name, p.middle_name, p.gender, p.contact_number
+            FROM enrollments e
+            JOIN users u ON e.student_id = u.id
+            LEFT JOIN user_profiles p ON u.id = p.user_id
+            WHERE e.section_id = :sec_id AND e.status IN ('Officially Enrolled', 'Enrolled')
+            ORDER BY p.last_name ASC, p.first_name ASC
+        ");
+        $stmt->execute(['sec_id' => $sectionId]);
+        $students = $stmt->fetchAll();
+
+        Response::success('Section students retrieved', $students);
     }
 
     /**
