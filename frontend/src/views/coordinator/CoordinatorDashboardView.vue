@@ -3,7 +3,7 @@
     <!-- Top Header & Actions -->
     <div class="no-print flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 pb-5 border-b border-slate-200">
       <div>
-        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-1">
           <BookOpen class="w-3.5 h-3.5 text-indigo-600" />
           <span>Academic Affairs & Curriculum Coordination</span>
         </div>
@@ -12,16 +12,18 @@
       </div>
 
       <div class="flex items-center space-x-2.5 flex-wrap gap-y-2 shrink-0">
-        <div class="hidden sm:flex items-center space-x-2 bg-slate-100 text-slate-700 border border-slate-200 px-3.5 py-1.5 rounded-xl text-xs font-medium font-mono">
+        <div class="hidden sm:flex items-center space-x-2 bg-indigo-50/80 text-indigo-900 border border-indigo-200/80 px-3.5 py-1.5 rounded-xl text-xs font-semibold font-mono">
+          <BookOpen class="w-3.5 h-3.5 text-indigo-600" />
           <span>Curriculum:</span>
-          <strong class="text-slate-900 font-bold">{{ curriculumData.subjects?.length || 0 }} Subjects</strong>
-          <span class="text-slate-300">•</span>
+          <strong class="text-indigo-950 font-bold">{{ curriculumData.subjects?.length || 0 }} Subjects</strong>
+          <span class="text-indigo-300">•</span>
+          <Users class="w-3.5 h-3.5 text-emerald-600" />
           <span>Sections:</span>
-          <strong class="text-slate-900 font-bold">{{ sectionsData.sections?.length || 0 }}</strong>
+          <strong class="text-emerald-900 font-bold">{{ sectionsData.sections?.length || 0 }}</strong>
         </div>
         <button 
           @click="loadData(); loadEventsData();"
-          class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium shadow-2xs transition flex items-center space-x-1.5 cursor-pointer"
+          class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 hover:text-indigo-600 text-slate-700 border border-slate-200 text-xs font-semibold shadow-2xs transition flex items-center space-x-1.5 cursor-pointer"
         >
           <RefreshCw class="w-3.5 h-3.5" />
           <span>Refresh</span>
@@ -94,7 +96,7 @@
             type="button"
             @click="curriculumSubTab = 'shs'"
             :class="curriculumSubTab === 'shs' 
-              ? 'bg-slate-900 text-white shadow-sm' 
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' 
               : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
             class="px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-2 cursor-pointer select-none"
           >
@@ -102,7 +104,7 @@
             <span>Senior High School (Grades 11–12)</span>
             <span 
               class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold"
-              :class="curriculumSubTab === 'shs' ? 'bg-slate-800 text-slate-200' : 'bg-slate-200 text-slate-700'"
+              :class="curriculumSubTab === 'shs' ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-200 text-slate-700'"
             >
               {{ allShsSubjects.length }}
             </span>
@@ -113,15 +115,15 @@
             type="button"
             @click="curriculumSubTab = 'jhs'"
             :class="curriculumSubTab === 'jhs' 
-              ? 'bg-slate-900 text-white shadow-sm' 
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' 
               : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
             class="px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-2 cursor-pointer select-none"
           >
-            <Lock class="w-3.5 h-3.5" />
+            <BookOpen class="w-3.5 h-3.5" />
             <span>Junior High School (Grades 7–10)</span>
             <span 
               class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold"
-              :class="curriculumSubTab === 'jhs' ? 'bg-slate-800 text-slate-200' : 'bg-slate-200 text-slate-700'"
+              :class="curriculumSubTab === 'jhs' ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-200 text-slate-700'"
             >
               {{ allJhsSubjects.length }}
             </span>
@@ -129,9 +131,10 @@
         </div>
 
         <!-- Global School Year Indicator -->
-        <div class="text-xs font-semibold text-slate-500 flex items-center space-x-1.5">
-          <span>Active S.Y.:</span>
-          <strong class="text-slate-900 font-bold">{{ curriculumData.selected_school_year?.name || 'SY 2026-2027' }}</strong>
+        <div class="text-xs font-semibold text-slate-500 flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-blue-50/70 border border-blue-200">
+          <Calendar class="w-3.5 h-3.5 text-blue-600" />
+          <span class="text-blue-900 font-medium">Active S.Y.:</span>
+          <strong class="text-blue-950 font-bold">{{ curriculumData.selected_school_year?.name || 'SY 2026-2027' }}</strong>
         </div>
       </div>
 
@@ -140,8 +143,8 @@
         <!-- SHS Header & Action Toolbar -->
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
           <div>
-            <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-semibold text-[10px] uppercase tracking-wider mb-1 border border-slate-200">
-              <GraduationCap class="w-3 h-3 text-slate-600" />
+            <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-800 font-bold text-[10px] uppercase tracking-wider mb-1 border border-indigo-200">
+              <GraduationCap class="w-3 h-3 text-indigo-600" />
               <span>Senior High School Program Offerings</span>
             </div>
             <h2 class="text-lg font-extrabold text-slate-900">SHS Curriculum & Subjects Management</h2>
@@ -152,7 +155,7 @@
           <div class="flex items-center space-x-2 flex-wrap gap-y-2">
             <!-- 1. School Year Selector Dropdown -->
             <div class="flex items-center space-x-1.5 bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 shadow-2xs">
-              <Calendar class="w-3.5 h-3.5 text-slate-600 shrink-0" />
+              <Calendar class="w-3.5 h-3.5 text-indigo-600 shrink-0" />
               <select 
                 v-model="selectedCurriculumSyId" 
                 @change="onCurriculumSchoolYearChange"
@@ -179,10 +182,10 @@
               <button 
                 type="button"
                 @click="openCarryOverModal()" 
-                class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-2xs transition flex items-center space-x-1.5 cursor-pointer"
+                class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-indigo-50/50 text-indigo-700 border border-indigo-200 shadow-2xs transition flex items-center space-x-1.5 cursor-pointer"
                 title="Batch copy Senior High subjects into this school year"
               >
-                <ArrowRightLeft class="w-3.5 h-3.5 text-slate-600" />
+                <ArrowRightLeft class="w-3.5 h-3.5 text-indigo-600" />
                 <span>Carry Over SHS Subjects</span>
               </button>
 
@@ -190,7 +193,7 @@
               <button 
                 type="button"
                 @click="openAddShsSubjectModal()" 
-                class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-2xs transition flex items-center space-x-1.5 cursor-pointer"
+                class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-100 transition flex items-center space-x-1.5 cursor-pointer"
                 title="Create a new Senior High School subject offering"
               >
                 <Plus class="w-3.5 h-3.5 text-white" />
@@ -285,17 +288,17 @@
 
           <!-- SHS Summary Statistics Pills -->
           <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200 text-xs">
-            <div class="px-3 py-1 rounded-lg bg-white border border-slate-200 font-semibold text-slate-700">
+            <div class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 border-l-4 border-l-blue-500 font-semibold text-slate-700 shadow-2xs">
               Selected S.Y.: <strong class="text-slate-900">{{ curriculumData.selected_school_year?.name || 'SY 2026-2027' }}</strong>
             </div>
-            <div class="px-3 py-1 rounded-lg bg-white border border-slate-200 font-semibold text-slate-700">
-              SHS Subjects: <strong class="text-slate-900">{{ shsFilteredSubjects.length }}</strong>
+            <div class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 border-l-4 border-l-indigo-500 font-semibold text-slate-700 shadow-2xs">
+              SHS Subjects: <strong class="text-indigo-900">{{ shsFilteredSubjects.length }}</strong>
             </div>
-            <div class="px-3 py-1 rounded-lg bg-white border border-slate-200 font-semibold text-slate-700">
-              Total Units: <strong class="text-slate-900">{{ shsCurriculumStats.totalUnits.toFixed(1) }}</strong>
+            <div class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 border-l-4 border-l-teal-500 font-semibold text-slate-700 shadow-2xs">
+              Total Units: <strong class="text-teal-900">{{ shsCurriculumStats.totalUnits.toFixed(1) }}</strong>
             </div>
-            <div class="px-3 py-1 rounded-lg bg-white border border-slate-200 font-semibold text-slate-700">
-              Total Weekly Hours: <strong class="text-slate-900">{{ shsCurriculumStats.totalHours.toFixed(1) }} hrs</strong>
+            <div class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 border-l-4 border-l-amber-500 font-semibold text-slate-700 shadow-2xs">
+              Weekly Hours: <strong class="text-amber-900">{{ shsCurriculumStats.totalHours.toFixed(1) }} hrs</strong>
             </div>
           </div>
         </div>
@@ -304,13 +307,13 @@
         <div class="overflow-x-auto">
           <table class="w-full text-xs text-left border-collapse min-w-[850px]">
             <thead>
-              <tr class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200">
+              <tr class="bg-slate-50/80 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200">
                 <th v-if="!isCurriculumLocked" class="p-3.5 w-10 text-center">
                   <input 
                     type="checkbox" 
                     :checked="isAllShsSelected" 
                     @change="toggleSelectAllShs" 
-                    class="rounded text-slate-900 focus:ring-slate-900 w-3.5 h-3.5 cursor-pointer"
+                    class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 cursor-pointer"
                     title="Select all visible SHS subjects" 
                   />
                 </th>
@@ -329,45 +332,56 @@
               <tr 
                 v-for="sub in shsFilteredSubjects" 
                 :key="sub.id" 
-                class="hover:bg-slate-50 transition"
-                :class="selectedShsSubjectIds.includes(sub.id) ? 'bg-slate-100/70' : ''"
+                class="hover:bg-indigo-50/20 transition group"
+                :class="selectedShsSubjectIds.includes(sub.id) ? 'bg-indigo-50/40' : ''"
               >
                 <td v-if="!isCurriculumLocked" class="p-3.5 text-center">
                   <input 
                     type="checkbox" 
                     :checked="selectedShsSubjectIds.includes(sub.id)" 
                     @change="toggleShsSubject(sub.id)" 
-                    class="rounded text-slate-900 focus:ring-slate-900 w-3.5 h-3.5 cursor-pointer" 
+                    class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 cursor-pointer" 
                   />
                 </td>
-                <td class="p-3.5 font-bold font-mono text-slate-900">{{ sub.code }}</td>
+                <td class="p-3.5">
+                  <span class="px-2.5 py-1 rounded-md bg-slate-100/90 text-slate-900 font-mono font-bold text-xs border border-slate-200 group-hover:border-indigo-300 group-hover:text-indigo-700 transition-colors">
+                    {{ sub.code }}
+                  </span>
+                </td>
                 <td class="p-3.5 font-bold text-slate-800">
                   {{ sub.title }}
                   <p v-if="sub.description" class="text-[11px] font-normal text-slate-400 mt-0.5 line-clamp-1">{{ sub.description }}</p>
                 </td>
                 <td class="p-3.5">
                   <span class="font-semibold text-slate-800">{{ sub.grade_level_name }}</span>
-                  <span v-if="sub.strand_code" class="ml-1.5 px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold font-mono text-[10px] border border-slate-200">
+                  <span v-if="sub.strand_code" class="ml-1.5 px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold font-mono text-[10px] border border-indigo-200/80">
                     {{ sub.strand_code }}
                   </span>
                 </td>
                 <td class="p-3.5">
-                  <span class="px-2 py-0.5 rounded text-[10px] font-bold border inline-block" :class="getCategoryClass(sub.category, sub.grade_category)">
+                  <span class="px-2.5 py-0.5 rounded text-[10px] font-bold border inline-block" :class="getCategoryClass(sub.category, sub.grade_category)">
                     {{ sub.category || 'SHS Core' }}
                   </span>
                 </td>
-                <td class="p-3.5 text-slate-600">{{ sub.semester }}</td>
-                <td class="p-3.5 text-center font-mono font-bold text-slate-700">
-                  <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                <td class="p-3.5">
+                  <span 
+                    class="px-2 py-0.5 rounded text-[10px] font-semibold border inline-block"
+                    :class="sub.semester === '1st Semester' ? 'bg-amber-50 text-amber-800 border-amber-200' : (sub.semester === '2nd Semester' ? 'bg-teal-50 text-teal-800 border-teal-200' : 'bg-slate-100 text-slate-700 border-slate-200')"
+                  >
+                    {{ sub.semester }}
+                  </span>
+                </td>
+                <td class="p-3.5 text-center font-mono font-bold">
+                  <span class="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px]">
                     {{ sub.schedules_count || 0 }} sections
                   </span>
                 </td>
-                <td class="p-3.5 text-center font-mono font-bold">{{ sub.lecture_hours }}h / {{ sub.units }}u</td>
-                <td class="p-3.5 text-center text-slate-500 font-mono text-[11px]">
+                <td class="p-3.5 text-center font-mono font-bold text-slate-800">{{ sub.lecture_hours }}h / {{ sub.units }}u</td>
+                <td class="p-3.5 text-center font-mono text-[11px]">
                   <span v-if="sub.prerequisite_code" class="px-2 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200 font-bold">
                     {{ sub.prerequisite_code }}
                   </span>
-                  <span v-else class="text-slate-400">None</span>
+                  <span v-else class="text-slate-400 italic">None</span>
                 </td>
                 <td class="p-3.5 text-right">
                   <!-- If locked: display locked badge -->
@@ -384,7 +398,7 @@
                   <div v-else class="inline-flex items-center space-x-1 justify-end">
                     <button 
                       @click="openEditShsSubjectModal(sub)"
-                      class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                      class="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition cursor-pointer"
                       title="Edit SHS Subject"
                     >
                       <Pencil class="w-3.5 h-3.5" />
@@ -405,7 +419,7 @@
                     <GraduationCap class="w-8 h-8 text-slate-300 mx-auto" />
                     <p class="font-bold text-slate-700">No SHS subjects found for {{ curriculumData.selected_school_year?.name || 'this school year' }}.</p>
                     <p v-if="!isCurriculumLocked" class="text-[11px] text-slate-400 leading-relaxed">
-                      Click <strong class="text-slate-900">Carry Over SHS Subjects</strong> to copy subjects from another school year, or click <strong class="text-slate-900">+ Add SHS Subject</strong> to create a new one.
+                      Click <strong class="text-indigo-600">Carry Over SHS Subjects</strong> to copy subjects from another school year, or click <strong class="text-indigo-600">+ Add SHS Subject</strong> to create a new one.
                     </p>
                   </div>
                 </td>
@@ -420,8 +434,8 @@
         <!-- JHS Header -->
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
           <div>
-            <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-semibold text-[10px] uppercase tracking-wider mb-1 border border-slate-200">
-              <BookOpen class="w-3 h-3 text-slate-600" />
+            <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-800 font-bold text-[10px] uppercase tracking-wider mb-1 border border-indigo-200">
+              <BookOpen class="w-3 h-3 text-indigo-600" />
               <span>DepEd Standard JHS Blueprint</span>
             </div>
             <h2 class="text-lg font-extrabold text-slate-900">Junior High School Core Learning Areas</h2>
@@ -441,7 +455,7 @@
                   v-model="jhsFilter.search" 
                   type="text" 
                   placeholder="e.g. English 7, Mathematics 10, Science..." 
-                  class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none" 
+                  class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
                 />
               </div>
             </div>
@@ -449,7 +463,7 @@
             <!-- Grade Level Filter -->
             <div>
               <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Filter by Junior High Grade Level</label>
-              <select v-model="jhsFilter.grade_level_id" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none">
+              <select v-model="jhsFilter.grade_level_id" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 <option value="">All JHS Grade Levels (Grades 7–10)</option>
                 <option v-for="g in jhsGradeLevels" :key="g.id" :value="g.id">{{ g.name }}</option>
               </select>
@@ -458,17 +472,17 @@
 
           <!-- JHS Summary Statistics Pills -->
           <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200 text-xs">
-            <div class="px-3 py-1 rounded-lg bg-white border border-slate-200 font-semibold text-slate-700">
-              Standard Learning Areas: <strong class="text-slate-900">{{ jhsFilteredSubjects.length }} Subjects</strong>
+            <div class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 border-l-4 border-l-indigo-500 font-semibold text-slate-700 shadow-2xs">
+              Standard Learning Areas: <strong class="text-indigo-900">{{ jhsFilteredSubjects.length }} Subjects</strong>
             </div>
-            <div class="px-3 py-1 rounded-lg bg-white border border-slate-200 font-semibold text-slate-700">
-              Total Units: <strong class="text-slate-900">{{ jhsCurriculumStats.totalUnits.toFixed(1) }}</strong>
+            <div class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 border-l-4 border-l-teal-500 font-semibold text-slate-700 shadow-2xs">
+              Total Units: <strong class="text-teal-900">{{ jhsCurriculumStats.totalUnits.toFixed(1) }}</strong>
             </div>
-            <div class="px-3 py-1 rounded-lg bg-white border border-slate-200 font-semibold text-slate-700">
-              Weekly Hours: <strong class="text-slate-900">{{ jhsCurriculumStats.totalHours.toFixed(1) }} hrs</strong>
+            <div class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 border-l-4 border-l-amber-500 font-semibold text-slate-700 shadow-2xs">
+              Weekly Hours: <strong class="text-amber-900">{{ jhsCurriculumStats.totalHours.toFixed(1) }} hrs</strong>
             </div>
-            <div class="px-3 py-1 rounded-lg bg-slate-100 border border-slate-200 font-semibold text-slate-700">
-              Status: <strong class="text-slate-900">Standardized across all school years</strong>
+            <div class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 border-l-4 border-l-emerald-500 font-semibold text-slate-700 shadow-2xs">
+              Status: <strong class="text-emerald-900">Standardized across all school years</strong>
             </div>
           </div>
         </div>
@@ -477,7 +491,7 @@
         <div class="overflow-x-auto">
           <table class="w-full text-xs text-left border-collapse min-w-[850px]">
             <thead>
-              <tr class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200">
+              <tr class="bg-slate-50/80 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200">
                 <th class="p-3.5">Subject Code</th>
                 <th class="p-3.5">Subject Title</th>
                 <th class="p-3.5">Grade Level</th>
@@ -491,26 +505,34 @@
               <tr 
                 v-for="sub in jhsFilteredSubjects" 
                 :key="sub.id" 
-                class="hover:bg-slate-50 transition"
+                class="hover:bg-indigo-50/20 transition group"
               >
-                <td class="p-3.5 font-bold font-mono text-slate-900">{{ sub.code }}</td>
+                <td class="p-3.5">
+                  <span class="px-2.5 py-1 rounded-md bg-slate-100/90 text-slate-900 font-mono font-bold text-xs border border-slate-200 group-hover:border-indigo-300 group-hover:text-indigo-700 transition-colors">
+                    {{ sub.code }}
+                  </span>
+                </td>
                 <td class="p-3.5 font-bold text-slate-800">
                   {{ sub.title }}
                   <p v-if="sub.description" class="text-[11px] font-normal text-slate-400 mt-0.5 line-clamp-1">{{ sub.description }}</p>
                 </td>
                 <td class="p-3.5 font-semibold text-slate-800">{{ sub.grade_level_name }}</td>
                 <td class="p-3.5">
-                  <span class="px-2 py-0.5 rounded text-[10px] font-bold border inline-block bg-slate-100 text-slate-700 border-slate-200">
+                  <span class="px-2.5 py-0.5 rounded text-[10px] font-bold border inline-block bg-indigo-50 text-indigo-700 border-indigo-200/80">
                     JHS Core
                   </span>
                 </td>
-                <td class="p-3.5 text-slate-600">{{ sub.semester || 'Full Year' }}</td>
-                <td class="p-3.5 text-center font-mono font-bold text-slate-700">
-                  <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                <td class="p-3.5">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-semibold border inline-block bg-slate-100 text-slate-700 border-slate-200">
+                    {{ sub.semester || 'Full Year' }}
+                  </span>
+                </td>
+                <td class="p-3.5 text-center font-mono font-bold">
+                  <span class="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px]">
                     {{ sub.schedules_count || 0 }} sections
                   </span>
                 </td>
-                <td class="p-3.5 text-center font-mono font-bold">{{ sub.lecture_hours }}h / {{ sub.units }}u</td>
+                <td class="p-3.5 text-center font-mono font-bold text-slate-800">{{ sub.lecture_hours }}h / {{ sub.units }}u</td>
               </tr>
               <tr v-if="jhsFilteredSubjects.length === 0">
                 <td colspan="7" class="p-8 text-center text-slate-400 text-xs">
@@ -527,16 +549,16 @@
     <div v-if="activeTab === 'strands'" class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div>
-          <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-semibold text-[10px] uppercase tracking-wider mb-1 border border-slate-200">
-            <Layers class="w-3 h-3 text-slate-600" />
+          <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-800 font-bold text-[10px] uppercase tracking-wider mb-1 border border-indigo-200">
+            <Layers class="w-3 h-3 text-indigo-600" />
             <span>Senior High School Program Offerings</span>
           </div>
           <h2 class="text-lg font-extrabold text-slate-900">Academic Tracks & Strands Catalog</h2>
           <p class="text-xs text-slate-500">Official DepEd Senior High school tracks and strands curriculum roadmaps.</p>
         </div>
 
-        <div class="px-3.5 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold flex items-center space-x-2 shadow-2xs select-none">
-          <Sparkles class="w-3.5 h-3.5 text-slate-500 shrink-0" />
+        <div class="px-3.5 py-1.5 rounded-xl bg-indigo-50/70 border border-indigo-200 text-indigo-900 text-xs font-bold flex items-center space-x-2 shadow-2xs select-none">
+          <Sparkles class="w-3.5 h-3.5 text-indigo-600 shrink-0" />
           <span>Institutional Programs (Predefined)</span>
         </div>
       </div>
@@ -546,7 +568,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Filter by Academic Track</label>
-            <select v-model="strandFilter.track_id" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none">
+            <select v-model="strandFilter.track_id" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
               <option value="">All Academic Tracks</option>
               <option v-for="t in curriculumData.tracks" :key="t.id" :value="t.id">{{ t.code }} - {{ t.name }}</option>
             </select>
@@ -560,7 +582,7 @@
                 v-model="strandFilter.search" 
                 type="text" 
                 placeholder="e.g. STEM, TVL, Humanities..." 
-                class="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none" 
+                class="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
               />
             </div>
           </div>
@@ -572,13 +594,13 @@
         <div 
           v-for="st in filteredStrands" 
           :key="st.id"
-          class="p-5 rounded-2xl border transition relative flex flex-col justify-between hover:shadow-md border-slate-200 bg-white"
+          class="p-5 rounded-2xl border transition relative flex flex-col justify-between hover:shadow-md border-slate-200 bg-white hover:border-indigo-200"
         >
           <!-- Clickable Card Body -->
           <div @click="openStrandDetailsModal(st)" class="cursor-pointer group">
             <!-- Card Header: Badges -->
             <div class="flex items-center justify-between gap-2 mb-3">
-              <span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider font-mono bg-slate-100 text-slate-700 border border-slate-200">
+              <span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider font-mono" :class="getTrackBadgeClass(st.track_code || st.code)">
                 {{ st.track_name || 'Academic Track' }}
               </span>
 
@@ -589,24 +611,24 @@
 
             <!-- Strand Title -->
             <div class="flex items-baseline space-x-2">
-              <span class="text-sm font-mono font-extrabold text-slate-900 group-hover:text-indigo-900">{{ st.code }}</span>
+              <span class="text-sm font-mono font-extrabold text-indigo-700 group-hover:text-indigo-900">{{ st.code }}</span>
               <h3 class="text-sm font-bold text-slate-900 group-hover:text-indigo-900 transition">{{ st.name }}</h3>
             </div>
             <p class="text-[11px] text-slate-500 mt-1 leading-relaxed line-clamp-2">{{ st.description || 'DepEd recognized Senior High School specialization pathway.' }}</p>
 
             <!-- Real-time Analytics Metrics -->
             <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-3 gap-2 text-center">
-              <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 group-hover:bg-slate-100 transition">
-                <div class="text-xs font-bold font-mono text-slate-900">{{ st.enrolled_students_count || 0 }}</div>
-                <div class="text-[9px] font-semibold text-slate-500 uppercase">Enrolled</div>
+              <div class="p-2 rounded-xl bg-indigo-50/60 border border-indigo-100 group-hover:bg-indigo-100/70 transition">
+                <div class="text-xs font-bold font-mono text-indigo-950">{{ st.enrolled_students_count || 0 }}</div>
+                <div class="text-[9px] font-bold text-indigo-700 uppercase">Enrolled</div>
               </div>
-              <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 group-hover:bg-slate-100 transition">
-                <div class="text-xs font-bold font-mono text-slate-900">{{ st.active_sections_count || 0 }}</div>
-                <div class="text-[9px] font-semibold text-slate-500 uppercase">Sections</div>
+              <div class="p-2 rounded-xl bg-blue-50/60 border border-blue-100 group-hover:bg-blue-100/70 transition">
+                <div class="text-xs font-bold font-mono text-blue-950">{{ st.active_sections_count || 0 }}</div>
+                <div class="text-[9px] font-bold text-blue-700 uppercase">Sections</div>
               </div>
-              <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 group-hover:bg-slate-100 transition">
-                <div class="text-xs font-bold font-mono text-slate-900">{{ st.curriculum_subjects_count || 0 }}</div>
-                <div class="text-[9px] font-semibold text-slate-500 uppercase">Courses</div>
+              <div class="p-2 rounded-xl bg-teal-50/60 border border-teal-100 group-hover:bg-teal-100/70 transition">
+                <div class="text-xs font-bold font-mono text-teal-950">{{ st.curriculum_subjects_count || 0 }}</div>
+                <div class="text-[9px] font-bold text-teal-700 uppercase">Courses</div>
               </div>
             </div>
           </div>
@@ -616,14 +638,14 @@
             <button 
               type="button"
               @click="openStrandDetailsModal(st)"
-              class="w-full py-2 px-3.5 rounded-xl font-bold bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 transition flex items-center justify-between shadow-2xs group/btn cursor-pointer"
+              class="w-full py-2 px-3.5 rounded-xl font-bold bg-indigo-50/80 hover:bg-indigo-600 hover:text-white text-indigo-700 border border-indigo-200 hover:border-indigo-600 transition flex items-center justify-between shadow-2xs group/btn cursor-pointer"
               title="View complete strand curriculum, learning areas, and section assignments"
             >
-              <span class="inline-flex items-center space-x-1.5 font-bold text-slate-800">
-                <BookOpen class="w-3.5 h-3.5 text-slate-600" />
+              <span class="inline-flex items-center space-x-1.5 font-bold">
+                <BookOpen class="w-3.5 h-3.5" />
                 <span>View Strand Blueprint & Roadmap</span>
               </span>
-              <span class="text-slate-600 font-bold group-hover/btn:translate-x-0.5 transition-transform">→</span>
+              <span class="font-bold group-hover/btn:translate-x-0.5 transition-transform">→</span>
             </button>
           </div>
         </div>
@@ -638,14 +660,14 @@
     <div v-if="activeTab === 'sections'" class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div>
-          <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-semibold text-[10px] uppercase tracking-wider mb-1 border border-slate-200">
-            <Users class="w-3 h-3 text-slate-600" />
+          <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-800 font-bold text-[10px] uppercase tracking-wider mb-1 border border-indigo-200">
+            <Users class="w-3 h-3 text-indigo-600" />
             <span>Classroom Capacity & Faculty Loading</span>
           </div>
           <h2 class="text-lg font-bold text-slate-900">Class Sectioning & Advisers</h2>
           <p class="text-xs text-slate-500">Monitor section capacities, room assignments, and assigned faculty advisers across JHS and SHS.</p>
         </div>
-        <button @click="openSectionModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition flex items-center space-x-1.5 shrink-0 cursor-pointer">
+        <button @click="openSectionModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-100 transition flex items-center space-x-1.5 shrink-0 cursor-pointer">
           <Plus class="w-4 h-4" />
           <span>Create Section</span>
         </button>
@@ -663,7 +685,7 @@
                 v-model="sectionFilter.search" 
                 type="text" 
                 placeholder="Section, room, or adviser..." 
-                class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition focus:outline-none" 
+                class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition focus:outline-none" 
               />
             </div>
           </div>
@@ -671,7 +693,7 @@
           <!-- Grade Level Filter -->
           <div>
             <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Grade Level</label>
-            <select v-model="sectionFilter.grade_level_id" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none">
+            <select v-model="sectionFilter.grade_level_id" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
               <option value="">All Grade Levels</option>
               <option v-for="g in curriculumData.grade_levels" :key="g.id" :value="g.id">{{ g.name }} ({{ g.category }})</option>
             </select>
@@ -680,7 +702,7 @@
           <!-- Track / Strand Filter -->
           <div>
             <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Track / Strand</label>
-            <select v-model="sectionFilter.strand_id" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none">
+            <select v-model="sectionFilter.strand_id" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
               <option value="">All Strands & JHS</option>
               <option value="jhs">Junior High Sections (JHS)</option>
               <option v-for="s in curriculumData.strands" :key="s.id" :value="s.id">{{ s.code }} - {{ s.name }}</option>
@@ -691,9 +713,9 @@
           <div>
             <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1 flex items-center justify-between">
               <span>Sort Order</span>
-              <span class="text-slate-500 font-semibold lowercase">({{ filteredSections.length }} found)</span>
+              <span class="text-indigo-600 font-bold lowercase">({{ filteredSections.length }} found)</span>
             </label>
-            <select v-model="sectionFilter.sortBy" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-slate-800 font-semibold text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none">
+            <select v-model="sectionFilter.sortBy" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-slate-800 font-semibold text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
               <option value="grade_asc">Grade Level (Grade 7 → 12)</option>
               <option value="grade_desc">Grade Level (Grade 12 → 7)</option>
               <option value="name_asc">Section Name (A → Z)</option>
@@ -708,21 +730,21 @@
         <!-- Quick Summary Strip -->
         <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-200/80 text-xs">
           <div class="flex items-center space-x-2 flex-wrap gap-y-1">
-            <span class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-semibold text-slate-700">
-              Filtered Sections: <strong class="text-slate-900">{{ filteredSections.length }}</strong> of {{ sectionStats.totalSections }}
+            <span class="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 border-l-4 border-l-indigo-500 font-semibold text-slate-700 shadow-2xs">
+              Filtered Sections: <strong class="text-indigo-900">{{ filteredSections.length }}</strong> of {{ sectionStats.totalSections }}
             </span>
-            <span class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-semibold text-slate-700">
-              Total Enrolled: <strong class="text-slate-900">{{ sectionStats.totalEnrolled }}</strong>
+            <span class="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 border-l-4 border-l-emerald-500 font-semibold text-slate-700 shadow-2xs">
+              Total Enrolled: <strong class="text-emerald-900">{{ sectionStats.totalEnrolled }}</strong>
             </span>
-            <span class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-semibold text-slate-700">
-              Total Capacity: <strong class="text-slate-900">{{ sectionStats.totalCapacity }} slots</strong>
+            <span class="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 border-l-4 border-l-blue-500 font-semibold text-slate-700 shadow-2xs">
+              Total Capacity: <strong class="text-blue-900">{{ sectionStats.totalCapacity }} slots</strong>
             </span>
           </div>
 
           <button 
             v-if="sectionFilter.search || sectionFilter.grade_level_id || sectionFilter.strand_id || sectionFilter.sortBy !== 'grade_asc'"
             @click="resetSectionFilters"
-            class="text-[11px] font-bold text-slate-700 hover:text-slate-900 underline"
+            class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline"
           >
             Reset Filters
           </button>
@@ -731,12 +753,12 @@
 
       <!-- Sections Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div v-for="sec in filteredSections" :key="sec.id" class="p-5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs transition">
+        <div v-for="sec in filteredSections" :key="sec.id" class="p-5 rounded-2xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md transition">
           <div class="flex items-center justify-between mb-2">
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 font-mono border border-slate-200">
+            <span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 font-mono border border-indigo-200">
               {{ sec.grade_level_name }} {{ sec.strand_code ? '(' + sec.strand_code + ')' : '' }}
             </span>
-            <button @click="openSectionModal(sec)" class="text-xs text-slate-600 hover:text-slate-900 font-bold hover:underline cursor-pointer">Edit</button>
+            <button @click="openSectionModal(sec)" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer">Edit</button>
           </div>
           <h3 class="text-base font-extrabold text-slate-900">{{ sec.name }}</h3>
           <p class="text-xs text-slate-500 mt-0.5">Room: {{ sec.room || 'Unassigned' }}</p>
@@ -745,11 +767,14 @@
           <div class="mt-4 pt-3 border-t border-slate-100">
             <div class="flex justify-between text-xs font-semibold mb-1">
               <span class="text-slate-600">Enrolled Students</span>
-              <span class="text-slate-900 font-mono">{{ sec.current_enrolled }} / {{ sec.max_capacity }}</span>
+              <span class="font-mono font-bold" :class="sec.current_enrolled >= sec.max_capacity ? 'text-rose-600' : 'text-slate-900'">
+                {{ sec.current_enrolled }} / {{ sec.max_capacity }}
+              </span>
             </div>
             <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden border border-slate-200/60">
               <div 
-                class="h-full rounded-full bg-slate-800 transition-all duration-300"
+                class="h-full rounded-full transition-all duration-300"
+                :class="sec.current_enrolled >= sec.max_capacity ? 'bg-gradient-to-r from-rose-500 to-rose-600' : (sec.current_enrolled >= sec.max_capacity * 0.85 ? 'bg-gradient-to-r from-amber-500 to-amber-600' : 'bg-gradient-to-r from-indigo-500 to-blue-500')"
                 :style="{ width: Math.min(100, (sec.current_enrolled / sec.max_capacity) * 100) + '%' }"
               ></div>
             </div>
@@ -762,9 +787,9 @@
             <button 
               type="button"
               @click="openRosterModal(sec)" 
-              class="px-3 py-1.5 rounded-xl font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 text-[11px] transition flex items-center space-x-1.5 shadow-2xs cursor-pointer"
+              class="px-3 py-1.5 rounded-xl font-bold bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 border border-indigo-200 text-[11px] transition flex items-center space-x-1.5 shadow-2xs cursor-pointer"
             >
-              <Users class="w-3.5 h-3.5 text-slate-600" />
+              <Users class="w-3.5 h-3.5" />
               <span>Class Roster ({{ sec.current_enrolled }})</span>
             </button>
           </div>
@@ -780,8 +805,8 @@
     <div v-if="activeTab === 'schedules'" class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div>
-          <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-semibold text-[10px] uppercase tracking-wider mb-1 border border-slate-200">
-            <Clock class="w-3 h-3 text-slate-600" />
+          <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-800 font-bold text-[10px] uppercase tracking-wider mb-1 border border-indigo-200">
+            <Clock class="w-3 h-3 text-indigo-600" />
             <span>Master Class Schedule & Conflict-Free Timetable</span>
           </div>
           <h2 class="text-lg font-extrabold text-slate-900">Class Schedules & Faculty Loading</h2>
@@ -790,7 +815,7 @@
 
         <button 
           @click="openScheduleModal()" 
-          class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition flex items-center space-x-1.5 shrink-0 cursor-pointer"
+          class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-100 transition flex items-center space-x-1.5 shrink-0 cursor-pointer"
         >
           <Plus class="w-4 h-4" />
           <span>Add Subject Schedule</span>
@@ -807,7 +832,7 @@
           <button 
             type="button" 
             @click="isSectionDropdownOpen = !isSectionDropdownOpen"
-            class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold text-slate-900 focus:ring-2 focus:ring-slate-900 flex items-center justify-between text-left shadow-2xs hover:border-slate-400 transition cursor-pointer"
+            class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold text-slate-900 focus:ring-2 focus:ring-indigo-500 flex items-center justify-between text-left shadow-2xs hover:border-indigo-300 transition cursor-pointer"
           >
             <div class="truncate mr-2">
               <span v-if="currentSelectedSection" class="font-bold text-slate-900">
@@ -840,7 +865,7 @@
                 v-model="scheduleSectionSearch" 
                 type="text" 
                 placeholder="Search section, grade, strand, or room..."
-                class="w-full pl-8 pr-7 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-xs focus:ring-2 focus:ring-slate-900 focus:bg-white outline-none"
+                class="w-full pl-8 pr-7 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-xs focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none"
               />
               <button 
                 v-if="scheduleSectionSearch" 
@@ -856,7 +881,7 @@
               <button 
                 type="button" 
                 @click="scheduleGradeFilter = ''"
-                :class="scheduleGradeFilter === '' ? 'bg-slate-900 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                :class="scheduleGradeFilter === '' ? 'bg-indigo-600 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
                 class="px-2.5 py-1 rounded-lg whitespace-nowrap transition cursor-pointer"
               >
                 All ({{ sectionsData.sections?.length || 0 }})
@@ -864,7 +889,7 @@
               <button 
                 type="button" 
                 @click="scheduleGradeFilter = 'jhs'"
-                :class="scheduleGradeFilter === 'jhs' ? 'bg-slate-900 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                :class="scheduleGradeFilter === 'jhs' ? 'bg-indigo-600 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
                 class="px-2.5 py-1 rounded-lg whitespace-nowrap transition cursor-pointer"
               >
                 JHS (8)
@@ -872,7 +897,7 @@
               <button 
                 type="button" 
                 @click="scheduleGradeFilter = 'g11'"
-                :class="scheduleGradeFilter === 'g11' ? 'bg-slate-900 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                :class="scheduleGradeFilter === 'g11' ? 'bg-indigo-600 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
                 class="px-2.5 py-1 rounded-lg whitespace-nowrap transition cursor-pointer"
               >
                 Grade 11 (16)
@@ -880,7 +905,7 @@
               <button 
                 type="button" 
                 @click="scheduleGradeFilter = 'g12'"
-                :class="scheduleGradeFilter === 'g12' ? 'bg-slate-900 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                :class="scheduleGradeFilter === 'g12' ? 'bg-indigo-600 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
                 class="px-2.5 py-1 rounded-lg whitespace-nowrap transition cursor-pointer"
               >
                 Grade 12 (16)
@@ -894,13 +919,13 @@
                 :key="sec.id"
                 type="button"
                 @click="selectScheduleSection(sec)"
-                :class="selectedScheduleSectionId === sec.id ? 'bg-slate-100 text-slate-900 font-bold border border-slate-300' : 'hover:bg-slate-50 text-slate-800 border border-transparent'"
+                :class="selectedScheduleSectionId === sec.id ? 'bg-indigo-50 text-indigo-900 font-bold border border-indigo-200' : 'hover:bg-slate-50 text-slate-800 border border-transparent'"
                 class="w-full p-2 rounded-xl text-left transition flex items-center justify-between group cursor-pointer"
               >
                 <div class="min-w-0 pr-2">
                   <div class="flex items-center space-x-1.5">
                     <span class="font-bold text-xs truncate">{{ sec.name }}</span>
-                    <span v-if="sec.strand_code" class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 text-slate-700 font-mono border border-slate-200">
+                    <span v-if="sec.strand_code" class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 font-mono border border-indigo-200">
                       {{ sec.strand_code }}
                     </span>
                   </div>
@@ -911,7 +936,7 @@
                   </div>
                 </div>
 
-                <div v-if="selectedScheduleSectionId === sec.id" class="text-slate-900 shrink-0">
+                <div v-if="selectedScheduleSectionId === sec.id" class="text-indigo-600 shrink-0">
                   <Check class="w-4 h-4" />
                 </div>
               </button>
@@ -929,7 +954,7 @@
           <select 
             v-model="selectedScheduleSemester" 
             @change="loadSectionScheduleData" 
-            class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-slate-900 font-medium"
+            class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 font-medium text-slate-800"
           >
             <option value="1st Semester">1st Semester{{ curriculumData.active_school_year?.active_semester === '1st Semester' ? ' (Active Term)' : '' }}</option>
             <option value="2nd Semester">2nd Semester{{ curriculumData.active_school_year?.active_semester === '2nd Semester' ? ' (Active Term)' : '' }}</option>
@@ -938,7 +963,7 @@
 
         <div class="flex items-center justify-between sm:justify-end gap-3 pt-4 sm:pt-0" :class="{ 'sm:col-span-2': !isCurrentSectionSHS }">
           <div class="text-right">
-            <div class="text-xs font-bold text-slate-900">{{ activeSectionSchedule?.schedules?.length || 0 }} Scheduled Classes</div>
+            <div class="text-xs font-bold text-indigo-900">{{ activeSectionSchedule?.schedules?.length || 0 }} Scheduled Classes</div>
             <div class="text-[11px] text-slate-600 font-semibold font-mono">
               {{ totalScheduledHours.toFixed(1) }} Total Weekly Hours
             </div>
@@ -948,7 +973,7 @@
 
       <!-- Loading State -->
       <div v-if="isLoadingSchedule" class="p-12 text-center text-slate-400">
-        <span class="w-7 h-7 border-2 border-slate-900 border-t-transparent rounded-full animate-spin inline-block"></span>
+        <span class="w-7 h-7 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin inline-block"></span>
         <p class="mt-2 text-xs">Loading section timetable matrix...</p>
       </div>
 
@@ -961,9 +986,9 @@
             :key="day"
             class="rounded-2xl border border-slate-200 bg-slate-50/50 p-3 flex flex-col justify-between"
           >
-            <div class="border-b border-slate-200 pb-2 mb-2 flex items-center justify-between">
-              <h4 class="font-extrabold text-xs text-slate-800">{{ day }}</h4>
-              <span class="text-[10px] font-bold text-slate-600 font-mono">
+            <div class="border-b-2 border-indigo-500/40 pb-2 mb-2 flex items-center justify-between bg-slate-100/80 -mx-3 -mt-3 p-3 rounded-t-2xl">
+              <h4 class="font-extrabold text-xs text-slate-900">{{ day }}</h4>
+              <span class="text-[10px] font-bold text-indigo-700 font-mono bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
                 {{ getSchedulesForDay(day).length }} class{{ getSchedulesForDay(day).length === 1 ? '' : 'es' }}
               </span>
             </div>
@@ -973,11 +998,11 @@
                 v-for="item in getSchedulesForDay(day)" 
                 :key="item.id"
                 @click="openScheduleModal(item)"
-                class="p-2.5 bg-white rounded-xl border border-slate-200 shadow-2xs hover:border-slate-400 hover:shadow-sm transition text-xs space-y-1.5 group cursor-pointer"
+                class="p-2.5 bg-white rounded-xl border border-slate-200 border-l-4 border-l-indigo-600 shadow-2xs hover:border-indigo-300 hover:shadow-md transition text-xs space-y-1.5 group cursor-pointer"
               >
                 <div class="flex items-center justify-between">
-                  <span class="font-mono font-extrabold text-[10px] text-slate-900">{{ item.subject_code }}</span>
-                  <span class="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 font-mono font-semibold border border-slate-200">
+                  <span class="font-mono font-extrabold text-[10px] text-indigo-700">{{ item.subject_code }}</span>
+                  <span class="text-[9px] px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 font-mono font-semibold border border-indigo-200">
                     {{ formatTime(item.time_start) }} - {{ formatTime(item.time_end) }}
                   </span>
                 </div>
@@ -987,8 +1012,8 @@
                 </div>
 
                 <div class="text-[10px] text-slate-600 flex items-center space-x-1.5 pt-0.5">
-                  <User class="w-3 h-3 text-slate-500 shrink-0" />
-                  <span class="truncate">{{ item.teacher_first ? item.teacher_first + ' ' + item.teacher_last : 'Unassigned Teacher' }}</span>
+                  <User class="w-3 h-3 text-indigo-500 shrink-0" />
+                  <span class="truncate font-medium">{{ item.teacher_first ? item.teacher_first + ' ' + item.teacher_last : 'Unassigned Teacher' }}</span>
                 </div>
 
                 <div class="text-[10px] text-slate-500 flex items-center space-x-1.5">
@@ -999,7 +1024,7 @@
                 <div class="pt-2 border-t border-slate-100 flex items-center justify-center">
                   <button 
                     type="button"
-                    class="w-full py-1.5 rounded-lg font-semibold text-[10px] bg-slate-50 group-hover:bg-slate-900 group-hover:text-white text-slate-700 border border-slate-200 transition flex items-center justify-center space-x-1 shadow-2xs cursor-pointer"
+                    class="w-full py-1.5 rounded-lg font-semibold text-[10px] bg-slate-50 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 text-slate-700 border border-slate-200 transition flex items-center justify-center space-x-1 shadow-2xs cursor-pointer"
                   >
                     <Pencil class="w-2.5 h-2.5" />
                     <span>Edit Period</span>
@@ -1007,8 +1032,8 @@
                 </div>
               </div>
 
-              <div v-if="getSchedulesForDay(day).length === 0" class="h-24 flex items-center justify-center text-slate-300 text-[10px] italic">
-                No classes
+              <div v-if="getSchedulesForDay(day).length === 0" class="h-24 flex items-center justify-center text-slate-400 text-[10px] italic">
+                No classes scheduled
               </div>
             </div>
           </div>
@@ -1018,7 +1043,7 @@
         <div class="mt-6 rounded-2xl border border-slate-200 overflow-hidden">
           <div class="bg-slate-50 px-4 py-2.5 border-b border-slate-200 font-bold text-xs text-slate-700 flex items-center justify-between">
             <span>All Scheduled Periods for Current Section</span>
-            <span class="font-mono text-[11px] text-slate-900 font-bold">{{ activeSectionSchedule?.schedules?.length || 0 }} Items</span>
+            <span class="font-mono text-[11px] text-indigo-900 font-bold">{{ activeSectionSchedule?.schedules?.length || 0 }} Items</span>
           </div>
 
           <div class="overflow-x-auto">
@@ -1034,13 +1059,13 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100">
-                <tr v-for="sch in activeSectionSchedule?.schedules || []" :key="sch.id" class="hover:bg-slate-50 transition">
+                <tr v-for="sch in activeSectionSchedule?.schedules || []" :key="sch.id" class="hover:bg-indigo-50/20 transition">
                   <td class="p-3 font-bold text-slate-800">{{ sch.day_of_week }}</td>
                   <td class="p-3 font-mono font-semibold text-slate-800">
                     {{ formatTime(sch.time_start) }} – {{ formatTime(sch.time_end) }}
                   </td>
                   <td class="p-3">
-                    <span class="font-bold font-mono text-slate-900 mr-1.5">{{ sch.subject_code }}</span>
+                    <span class="font-bold font-mono text-indigo-700 mr-1.5">{{ sch.subject_code }}</span>
                     <span class="text-slate-800 font-medium">{{ sch.subject_title }}</span>
                   </td>
                   <td class="p-3 text-slate-700">
@@ -1048,7 +1073,7 @@
                   </td>
                   <td class="p-3 font-mono text-slate-600">{{ sch.room || 'Unassigned' }}</td>
                   <td class="p-3 text-right">
-                    <button @click="openScheduleModal(sch)" class="px-2.5 py-1 rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 font-semibold transition cursor-pointer">Edit Period</button>
+                    <button @click="openScheduleModal(sch)" class="px-2.5 py-1 rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-600 hover:text-white border border-indigo-200 font-bold transition cursor-pointer">Edit Period</button>
                   </td>
                 </tr>
                 <tr v-if="!activeSectionSchedule?.schedules || activeSectionSchedule.schedules.length === 0">
@@ -1067,8 +1092,8 @@
     <div v-if="activeTab === 'events'" class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div>
-          <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-semibold text-[10px] uppercase tracking-wider mb-1 border border-slate-200">
-            <Calendar class="w-3 h-3 text-slate-600" />
+          <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-800 font-bold text-[10px] uppercase tracking-wider mb-1 border border-indigo-200">
+            <Calendar class="w-3 h-3 text-indigo-600" />
             <span>Official Institutional Calendar & Milestones</span>
           </div>
           <h2 class="text-lg font-bold text-slate-900">School Events & Academic Calendar</h2>
@@ -1077,7 +1102,7 @@
 
         <button 
           @click="openEventModal()" 
-          class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition flex items-center space-x-1.5 shrink-0 cursor-pointer"
+          class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-100 transition flex items-center space-x-1.5 shrink-0 cursor-pointer"
         >
           <Plus class="w-4 h-4" />
           <span>Add School Event</span>
@@ -1085,13 +1110,13 @@
       </div>
 
       <!-- Upcoming Milestones Strip -->
-      <div class="p-4 bg-slate-900 rounded-2xl text-white space-y-3 border border-slate-800">
+      <div class="p-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl text-white space-y-3 border border-indigo-900/50 shadow-md">
         <div class="flex items-center justify-between">
-          <h3 class="font-bold text-xs uppercase tracking-wider flex items-center space-x-1.5 text-slate-200">
-            <Sparkles class="w-3.5 h-3.5 text-slate-300" />
+          <h3 class="font-bold text-xs uppercase tracking-wider flex items-center space-x-1.5 text-indigo-200">
+            <Sparkles class="w-3.5 h-3.5 text-indigo-400" />
             <span>Upcoming Academic Milestones & Deadlines</span>
           </h3>
-          <span class="text-[10px] text-slate-300 font-mono">SY 2026-2027</span>
+          <span class="text-[10px] text-indigo-200 font-mono bg-indigo-900/60 px-2 py-0.5 rounded border border-indigo-700">SY 2026-2027</span>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1121,7 +1146,7 @@
           <button 
             type="button" 
             @click="eventFilter.category = ''; loadEventsData()"
-            :class="eventFilter.category === '' ? 'bg-slate-900 text-white font-semibold shadow-2xs' : 'bg-white text-slate-700 border border-slate-200'"
+            :class="eventFilter.category === '' ? 'bg-indigo-600 text-white font-bold shadow-xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'"
             class="px-3 py-1.5 rounded-xl transition text-[11px] cursor-pointer"
           >
             All Events
@@ -1129,7 +1154,7 @@
           <button 
             type="button" 
             @click="eventFilter.category = 'Academic'; loadEventsData()"
-            :class="eventFilter.category === 'Academic' ? 'bg-slate-900 text-white font-semibold shadow-2xs' : 'bg-white text-slate-700 border border-slate-200'"
+            :class="eventFilter.category === 'Academic' ? 'bg-indigo-600 text-white font-bold shadow-xs' : 'bg-indigo-50/60 text-indigo-700 border border-indigo-200 hover:bg-indigo-100/60'"
             class="px-3 py-1.5 rounded-xl transition text-[11px] cursor-pointer"
           >
             Academic Milestones
@@ -1137,7 +1162,7 @@
           <button 
             type="button" 
             @click="eventFilter.category = 'Examination'; loadEventsData()"
-            :class="eventFilter.category === 'Examination' ? 'bg-slate-900 text-white font-semibold shadow-2xs' : 'bg-white text-slate-700 border border-slate-200'"
+            :class="eventFilter.category === 'Examination' ? 'bg-rose-600 text-white font-bold shadow-xs' : 'bg-rose-50/60 text-rose-700 border border-rose-200 hover:bg-rose-100/60'"
             class="px-3 py-1.5 rounded-xl transition text-[11px] cursor-pointer"
           >
             Examinations
@@ -1145,7 +1170,7 @@
           <button 
             type="button" 
             @click="eventFilter.category = 'Holiday'; loadEventsData()"
-            :class="eventFilter.category === 'Holiday' ? 'bg-slate-900 text-white font-semibold shadow-2xs' : 'bg-white text-slate-700 border border-slate-200'"
+            :class="eventFilter.category === 'Holiday' ? 'bg-amber-600 text-white font-bold shadow-xs' : 'bg-amber-50/60 text-amber-700 border border-amber-200 hover:bg-amber-100/60'"
             class="px-3 py-1.5 rounded-xl transition text-[11px] cursor-pointer"
           >
             Holidays
@@ -1153,7 +1178,7 @@
           <button 
             type="button" 
             @click="eventFilter.category = 'Activity'; loadEventsData()"
-            :class="eventFilter.category === 'Activity' ? 'bg-slate-900 text-white font-semibold shadow-2xs' : 'bg-white text-slate-700 border border-slate-200'"
+            :class="eventFilter.category === 'Activity' ? 'bg-emerald-600 text-white font-bold shadow-xs' : 'bg-emerald-50/60 text-emerald-700 border border-emerald-200 hover:bg-emerald-100/60'"
             class="px-3 py-1.5 rounded-xl transition text-[11px] cursor-pointer"
           >
             Activities & Intramurals
@@ -1161,7 +1186,7 @@
           <button 
             type="button" 
             @click="eventFilter.category = 'Administrative'; loadEventsData()"
-            :class="eventFilter.category === 'Administrative' ? 'bg-slate-900 text-white font-semibold shadow-2xs' : 'bg-white text-slate-700 border border-slate-200'"
+            :class="eventFilter.category === 'Administrative' ? 'bg-blue-600 text-white font-bold shadow-xs' : 'bg-blue-50/60 text-blue-700 border border-blue-200 hover:bg-blue-100/60'"
             class="px-3 py-1.5 rounded-xl transition text-[11px] cursor-pointer"
           >
             Administrative & PTA
@@ -1172,7 +1197,7 @@
           <select 
             v-model="eventFilter.audience" 
             @change="loadEventsData" 
-            class="px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none"
+            class="px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
           >
             <option value="">All Audiences</option>
             <option value="All">Target: All</option>
@@ -1188,7 +1213,7 @@
         <div 
           v-for="ev in calendarData.events" 
           :key="ev.id"
-          class="p-5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs transition flex flex-col justify-between"
+          class="p-5 rounded-2xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md transition flex flex-col justify-between"
         >
           <div class="space-y-2">
             <div class="flex items-center justify-between">
@@ -1203,7 +1228,7 @@
 
             <div class="pt-2 border-t border-slate-100 space-y-1 text-[11px] text-slate-600">
               <div class="flex items-center space-x-1.5 font-medium">
-                <Calendar class="w-3.5 h-3.5 text-slate-500" />
+                <Calendar class="w-3.5 h-3.5 text-indigo-500" />
                 <span>{{ formatEventDateRange(ev.start_date, ev.end_date) }}</span>
               </div>
               <div v-if="ev.start_time" class="flex items-center space-x-1.5 text-slate-500">
@@ -1218,10 +1243,10 @@
           </div>
 
           <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end space-x-2 text-xs">
-            <button @click="openEventModal(ev)" class="px-3 py-1.5 rounded-xl font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] transition cursor-pointer">
+            <button @click="openEventModal(ev)" class="px-3 py-1.5 rounded-xl font-bold bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 border border-indigo-200 text-[11px] transition cursor-pointer">
               Edit
             </button>
-            <button @click="openDeleteEventModal(ev)" class="px-3 py-1.5 rounded-xl font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] transition cursor-pointer">
+            <button @click="openDeleteEventModal(ev)" class="px-3 py-1.5 rounded-xl font-bold bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 text-[11px] transition cursor-pointer">
               Delete
             </button>
           </div>
@@ -2741,33 +2766,39 @@ const sectionForm = ref({
 
 const getCategoryClass = (cat, gradeCategory = '') => {
   const c = (cat || '').toLowerCase();
-  if (c.includes('specialized')) return 'bg-slate-900 text-white border border-slate-900';
-  if (c.includes('applied')) return 'bg-slate-100 text-slate-800 border border-slate-300 font-medium';
+  if (c.includes('specialized')) return 'bg-purple-50 text-purple-700 border border-purple-200/80 font-bold ring-1 ring-purple-500/10';
+  if (c.includes('applied')) return 'bg-sky-50 text-sky-700 border border-sky-200/80 font-bold ring-1 ring-sky-500/10';
   if (c.includes('core')) {
     if (gradeCategory === 'SHS' || c.includes('shs')) {
-      return 'bg-slate-100 text-slate-700 border border-slate-200';
+      return 'bg-indigo-50 text-indigo-700 border border-indigo-200/80 font-bold ring-1 ring-indigo-500/10';
     }
-    return 'bg-slate-50 text-slate-700 border border-slate-200';
+    return 'bg-indigo-50 text-indigo-700 border border-indigo-200/80 font-bold ring-1 ring-indigo-500/10';
   }
-  return 'bg-slate-100 text-slate-700 border border-slate-200';
+  return 'bg-slate-100 text-slate-700 border border-slate-200 font-semibold';
 };
 
 const getTrackBadgeClass = (code) => {
-  if (code === 'ACADEMIC' || code === 'GAS') return 'bg-slate-900 text-white font-semibold';
-  return 'bg-slate-100 text-slate-800 border border-slate-200 font-medium';
+  const cd = (code || '').toUpperCase();
+  if (cd.includes('STEM')) return 'bg-teal-50 text-teal-700 border border-teal-200 font-bold';
+  if (cd.includes('ABM')) return 'bg-amber-50 text-amber-700 border border-amber-200 font-bold';
+  if (cd.includes('HUMSS')) return 'bg-rose-50 text-rose-700 border border-rose-200 font-bold';
+  if (cd.includes('TVL')) return 'bg-blue-50 text-blue-700 border border-blue-200 font-bold';
+  if (cd.includes('ARTS') || cd.includes('SPORTS')) return 'bg-purple-50 text-purple-700 border border-purple-200 font-bold';
+  if (cd.includes('ACADEMIC') || cd.includes('GAS')) return 'bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold';
+  return 'bg-slate-100 text-slate-800 border border-slate-200 font-bold';
 };
 
 const getStrandStatusBadgeClass = (status) => {
-  if (status === 'Active') return 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium';
-  if (status === 'Deactivated') return 'bg-amber-50 text-amber-700 border border-amber-200 font-medium';
+  if (status === 'Active') return 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold';
+  if (status === 'Deactivated') return 'bg-amber-50 text-amber-700 border border-amber-200 font-bold';
   if (status === 'Archived') return 'bg-slate-100 text-slate-500 border border-slate-200';
-  return 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium';
+  return 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold';
 };
 
 const getStrandCardBorderClass = (status) => {
   if (status === 'Archived') return 'border-slate-200 bg-slate-50/70 opacity-75';
   if (status === 'Deactivated') return 'border-amber-200 bg-amber-50/20';
-  return 'border-slate-200 bg-white hover:border-slate-400 hover:shadow-md transition-all shadow-sm';
+  return 'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md transition-all shadow-sm';
 };
 
 const filteredStrands = computed(() => {
@@ -3880,12 +3911,12 @@ const formatEventDateRange = (startStr, endStr) => {
 };
 
 const getEventCategoryBadgeClass = (cat) => {
-  if (cat === 'Academic') return 'bg-purple-100 text-purple-800 border border-purple-200';
-  if (cat === 'Examination') return 'bg-rose-100 text-rose-800 border border-rose-200';
-  if (cat === 'Holiday') return 'bg-amber-100 text-amber-800 border border-amber-200';
-  if (cat === 'Activity') return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
-  if (cat === 'Administrative') return 'bg-blue-100 text-blue-800 border border-blue-200';
-  return 'bg-slate-100 text-slate-800';
+  if (cat === 'Academic') return 'bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold';
+  if (cat === 'Examination') return 'bg-rose-50 text-rose-700 border border-rose-200 font-bold';
+  if (cat === 'Holiday') return 'bg-amber-50 text-amber-700 border border-amber-200 font-bold';
+  if (cat === 'Activity') return 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold';
+  if (cat === 'Administrative') return 'bg-blue-50 text-blue-700 border border-blue-200 font-bold';
+  return 'bg-slate-100 text-slate-700 border border-slate-200 font-bold';
 };
 
 onMounted(async () => {
