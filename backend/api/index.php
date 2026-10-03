@@ -479,10 +479,6 @@ try {
             require_once __DIR__ . '/../run_database_sync.php';
             exit;
 
-        case 'system/auto-seed':
-            require_once __DIR__ . '/../auto_seed_infinityfree.php';
-            exit;
-
         case 'system/run-remote-seed':
             require_once __DIR__ . '/../run_remote_seed.php';
             exit;
