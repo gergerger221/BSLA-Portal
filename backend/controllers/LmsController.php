@@ -177,6 +177,12 @@ class LmsController {
                         if (!empty($mySub['quiz_answers'])) {
                             $mySub['quiz_answers'] = json_decode($mySub['quiz_answers'], true) ?: [];
                         }
+                        if ($mySub['score'] !== null && $mySub['score'] !== '') {
+                            $mySub['score'] = (int)round((float)$mySub['score']);
+                        }
+                        if ($mySub['auto_graded_score'] !== null && $mySub['auto_graded_score'] !== '') {
+                            $mySub['auto_graded_score'] = (int)round((float)$mySub['auto_graded_score']);
+                        }
                         $a['my_submission'] = $mySub;
                     } else {
                         $a['my_submission'] = null;
@@ -1008,6 +1014,12 @@ class LmsController {
             } else {
                 $s['quiz_answers'] = null;
             }
+            if ($s['score'] !== null && $s['score'] !== '') {
+                $s['score'] = (int)round((float)$s['score']);
+            }
+            if ($s['auto_graded_score'] !== null && $s['auto_graded_score'] !== '') {
+                $s['auto_graded_score'] = (int)round((float)$s['auto_graded_score']);
+            }
         }
         unset($s);
 
@@ -1031,7 +1043,7 @@ class LmsController {
         $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
 
         $submissionId = (int)($input['submission_id'] ?? 0);
-        $score = isset($input['score']) ? (float)$input['score'] : null;
+        $score = (isset($input['score']) && $input['score'] !== null && $input['score'] !== '') ? (int)round((float)$input['score']) : null;
         $feedback = trim($input['teacher_feedback'] ?? '');
         $quizAnswers = $input['quiz_answers'] ?? null;
         $quizAnswersJson = is_array($quizAnswers) ? json_encode($quizAnswers) : (is_string($quizAnswers) ? $quizAnswers : null);

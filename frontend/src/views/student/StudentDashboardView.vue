@@ -1690,7 +1690,7 @@
                           v-if="isAssignmentGraded(asg)" 
                           class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 block text-center"
                         >
-                          Graded: {{ asg.my_submission.score }} / {{ asg.max_score }}
+                          Graded: {{ formatScore(asg.my_submission.score) }} / {{ asg.max_score }}
                         </span>
                         <span 
                           v-else-if="asg.my_submission?.status === 'Submitted'" 
@@ -1757,7 +1757,7 @@
                         class="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs transition flex items-center space-x-1.5 cursor-pointer"
                       >
                         <ListChecks class="w-3.5 h-3.5 text-emerald-700" />
-                        <span>View Results ({{ asg.my_submission.score ?? asg.my_submission.auto_graded_score }} / {{ asg.max_score }} Pts)</span>
+                        <span>View Results ({{ formatScore(asg.my_submission.score ?? asg.my_submission.auto_graded_score) }} / {{ asg.max_score }} Pts)</span>
                       </button>
 
                       <!-- 2. If Submitted (Pending Essay Review) -->
@@ -2003,7 +2003,7 @@
               <div class="space-y-0.5">
                 <div class="font-bold text-xs flex items-center space-x-1.5">
                   <CheckCircle2 class="w-4 h-4 text-emerald-600" />
-                  <span>Official Score: {{ activeQuizAssignment.my_submission.score }} / {{ activeQuizAssignment.max_score }} Points</span>
+                  <span>Official Score: {{ formatScore(activeQuizAssignment.my_submission.score) }} / {{ activeQuizAssignment.max_score }} Points</span>
                 </div>
                 <div v-if="activeQuizAssignment.my_submission.teacher_feedback" class="text-[11px] text-emerald-800">
                   <strong>Teacher Feedback:</strong> {{ activeQuizAssignment.my_submission.teacher_feedback }}
@@ -3447,6 +3447,12 @@ const isAssignmentGraded = (asg) => {
   return sub.status === 'Graded' || (sub.score !== null && sub.score !== undefined && sub.score !== '');
 };
 
+const formatScore = (val) => {
+  if (val === null || val === undefined || val === '') return '0';
+  const num = Number(val);
+  return isNaN(num) ? val : Math.round(num);
+};
+
 const isPastDeadline = (dueDate) => {
   if (!dueDate) return false;
   return new Date(dueDate).getTime() < Date.now();
@@ -3627,13 +3633,13 @@ const submitStudentQuiz = async () => {
     if (res.data?.has_essay) {
       showNotice(
         'Quiz Submitted!',
-        `Your objective responses have been auto-graded: ${res.data.score} / ${res.data.max_score} pts. Your essay response(s) have been submitted to your teacher for manual evaluation.`,
+        `Your objective responses have been auto-graded: ${formatScore(res.data.score)} / ${res.data.max_score} pts. Your essay response(s) have been submitted to your teacher for manual evaluation.`,
         'success'
       );
     } else {
       showNotice(
         'Quiz Auto-Graded!',
-        `Your online quiz has been evaluated: You scored ${res.data?.score ?? 0} out of ${res.data?.max_score ?? 0} points!`,
+        `Your online quiz has been evaluated: You scored ${formatScore(res.data?.score ?? 0)} out of ${res.data?.max_score ?? 0} points!`,
         'success'
       );
     }

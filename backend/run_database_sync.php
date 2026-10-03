@@ -12,25 +12,32 @@ require_once __DIR__ . '/config/Env.php';
 \App\Config\Env::load();
 require_once __DIR__ . '/config/Database.php';
 
-echo "====================================================\n";
-echo " BSLA Birinan Portal - Remote Database Synchronizer \n";
-echo "====================================================\n\n";
+$logFile = __DIR__ . '/sync_result.log';
+$log = function(string $msg) use ($logFile) {
+    echo $msg . "\n";
+    file_put_contents($logFile, date('[Y-m-d H:i:s] ') . $msg . "\n", FILE_APPEND);
+};
+file_put_contents($logFile, "=== SYNC STARTED ===\n");
+
+$log("====================================================");
+$log(" BSLA Biringan Portal - Remote Database Synchronizer ");
+$log("====================================================");
 
 try {
     $db = \App\Config\Database::getConnection();
     $dbName = $db->query("SELECT DATABASE()")->fetchColumn();
-    echo "[1/4] Connected to database: {$dbName}\n";
+    $log("[1/4] Connected to database: {$dbName}");
 
     $sqlFile = __DIR__ . '/clean_infinityfree_database.sql';
     if (!file_exists($sqlFile)) {
         throw new Exception("SQL file not found at: {$sqlFile}");
     }
 
-    echo "[2/4] Reading SQL file (" . round(filesize($sqlFile) / 1024, 2) . " KB)...\n";
+    $log("[2/4] Reading SQL file (" . round(filesize($sqlFile) / 1024, 2) . " KB)...");
     $lines = file($sqlFile, FILE_IGNORE_NEW_LINES);
-    echo "  Total SQL lines: " . count($lines) . "\n";
+    $log("  Total SQL lines: " . count($lines));
 
-    echo "[3/4] Executing database schema and data migration...\n";
+    $log("[3/4] Executing database schema and data migration...");
     $db->exec("SET FOREIGN_KEY_CHECKS = 0;");
     $db->exec("SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';");
 
@@ -62,16 +69,16 @@ try {
     }
 
     $db->exec("SET FOREIGN_KEY_CHECKS = 1;");
-    echo "  Executed {$executed} SQL statements successfully ({$errors} warnings).\n";
+    $log("  Executed {$executed} SQL statements successfully ({$errors} warnings).");
     if (!empty($errorMessages)) {
         foreach ($errorMessages as $em) {
-            echo "  [INFO] {$em}\n";
+            $log("  [INFO] {$em}");
         }
     }
 
-    echo "\n[4/4] Verifying synchronized database state:\n";
+    $log("\n[4/4] Verifying synchronized database state:");
     $tables = $db->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
-    echo "  Total Tables: " . count($tables) . "\n";
+    $log("  Total Tables: " . count($tables));
     
     $checkList = [
         'tracks', 'strands', 'subjects', 'sections', 'schedules',
@@ -82,14 +89,14 @@ try {
     foreach ($checkList as $chk) {
         if (in_array($chk, $tables)) {
             $count = $db->query("SELECT COUNT(*) FROM `$chk`")->fetchColumn();
-            echo sprintf("  - %-25s : %d rows\n", $chk, $count);
+            $log(sprintf("  - %-25s : %d rows", $chk, $count));
         } else {
-            echo "  - {$chk} : MISSING!\n";
+            $log("  - {$chk} : MISSING!");
         }
     }
 
-    echo "\n>>> SYNCHRONIZATION COMPLETE! ALL CURRICULUM, LMS, AND SYSTEM TABLES ARE LIVE! <<<\n";
+    $log("\n>>> SYNCHRONIZATION COMPLETE! ALL CURRICULUM, LMS, AND SYSTEM TABLES ARE LIVE! <<<");
 
 } catch (Exception $e) {
-    echo "\n[FATAL ERROR] " . $e->getMessage() . "\n";
+    $log("\n[FATAL ERROR] " . $e->getMessage());
 }

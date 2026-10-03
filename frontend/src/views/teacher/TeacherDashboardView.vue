@@ -1505,7 +1505,7 @@
                       :class="hasEssayQuestions(s.quiz_answers) && s.submission_status !== 'Graded' ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 ring-2 ring-amber-400/20' : 'bg-violet-50 hover:bg-violet-100 text-violet-800 border border-violet-200'"
                     >
                       <ListChecks class="w-3 h-3" :class="hasEssayQuestions(s.quiz_answers) && s.submission_status !== 'Graded' ? 'text-amber-700' : 'text-violet-700'" />
-                      <span>{{ hasEssayQuestions(s.quiz_answers) ? (s.submission_status === 'Graded' ? 'Review & Edit Scores' : 'Grade Essays & Review') : `Review Quiz (${s.score !== null && s.score !== undefined ? s.score : (s.auto_graded_score ?? '--')} pts)` }}</span>
+                      <span>{{ hasEssayQuestions(s.quiz_answers) ? (s.submission_status === 'Graded' ? 'Review & Edit Scores' : 'Grade Essays & Review') : `Review Quiz (${s.score !== null && s.score !== undefined ? formatScore(s.score) : (s.auto_graded_score ? formatScore(s.auto_graded_score) : '--')} pts)` }}</span>
                     </button>
                     <div v-if="hasEssayQuestions(s.quiz_answers) && s.submission_status !== 'Graded'" class="text-[10px] text-amber-700 font-bold flex items-center space-x-1">
                       <span>⏳ Essays Pending Evaluation</span>
@@ -2185,6 +2185,12 @@ const hasEssayQuestions = (answers) => {
   return Object.values(ansObj).some(a => a && a.type === 'essay');
 };
 
+const formatScore = (val) => {
+  if (val === null || val === undefined || val === '') return '--';
+  const num = Number(val);
+  return isNaN(num) ? val : Math.round(num);
+};
+
 const recalcInspectionTotalScore = () => {
   if (!quizInspectionModal.value.submission || !quizInspectionModal.value.submission.quiz_answers) return;
   let total = 0;
@@ -2195,7 +2201,7 @@ const recalcInspectionTotalScore = () => {
       total += Math.max(0, parseFloat(ans.points_earned) || 0);
     }
   }
-  quizInspectionModal.value.submission.score = Math.round(total * 10) / 10;
+  quizInspectionModal.value.submission.score = Math.round(total);
 };
 
 const openQuizInspectionModal = (assignment, submission) => {
@@ -2216,7 +2222,7 @@ const openQuizInspectionModal = (assignment, submission) => {
         }
       }
     }
-    submission.score = Math.round(currentTotal * 10) / 10;
+    submission.score = Math.round(currentTotal);
   }
 
   quizInspectionModal.value = {

@@ -466,6 +466,10 @@ try {
             require_once __DIR__ . '/../run_database_sync.php';
             exit;
 
+        case 'system/run-remote-seed':
+            require_once __DIR__ . '/../run_remote_seed.php';
+            exit;
+
         default:
             Response::error("Endpoint not found: {$route}", 404);
             break;
