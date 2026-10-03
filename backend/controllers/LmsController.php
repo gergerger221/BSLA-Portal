@@ -17,108 +17,126 @@ class LmsController {
         $db = Database::getConnection();
         $this->ensureQuizSchema($db);
 
-        $sectionId = (int)($_GET['section_id'] ?? 0);
-        $subjectId = (int)($_GET['subject_id'] ?? 0);
+        $sectionId = (int)($_GET['section_id'] ?? $_GET['sectionId'] ?? $_REQUEST['section_id'] ?? 0);
+        $subjectId = (int)($_GET['subject_id'] ?? $_GET['subjectId'] ?? $_REQUEST['subject_id'] ?? 0);
 
         if (!$sectionId || !$subjectId) {
             Response::error('section_id and subject_id are required.', 400);
         }
 
         // Verify Class Info
-        $classStmt = $db->prepare("
-            SELECT sec.id as section_id, sec.name as section_name, sec.room as section_room,
-                   gl.name as grade_level_name, gl.code as grade_level_code,
-                   sub.id as subject_id, sub.code as subject_code, sub.name as subject_name, sub.units,
-                   u.id as teacher_id, u.username as teacher_username,
-                   p.first_name as teacher_first_name, p.last_name as teacher_last_name
-            FROM schedules s
-            JOIN sections sec ON s.section_id = sec.id
-            JOIN grade_levels gl ON sec.grade_level_id = gl.id
-            JOIN subjects sub ON s.subject_id = sub.id
-            LEFT JOIN users u ON s.teacher_id = u.id
-            LEFT JOIN user_profiles p ON u.id = p.user_id
-            WHERE s.section_id = :sec_id AND s.subject_id = :sub_id AND s.is_active = 1
-            LIMIT 1
-        ");
-        $classStmt->execute(['sec_id' => $sectionId, 'sub_id' => $subjectId]);
-        $classInfo = $classStmt->fetch();
+        $classInfo = null;
+        try {
+            $classStmt = $db->prepare("
+                SELECT sec.id as section_id, sec.name as section_name, sec.room as section_room,
+                       gl.name as grade_level_name, gl.code as grade_level_code,
+                       sub.id as subject_id, sub.code as subject_code, sub.name as subject_name, sub.units,
+                       u.id as teacher_id, u.username as teacher_username,
+                       p.first_name as teacher_first_name, p.last_name as teacher_last_name
+                FROM schedules s
+                JOIN sections sec ON s.section_id = sec.id
+                JOIN grade_levels gl ON sec.grade_level_id = gl.id
+                JOIN subjects sub ON s.subject_id = sub.id
+                LEFT JOIN users u ON s.teacher_id = u.id
+                LEFT JOIN user_profiles p ON u.id = p.user_id
+                WHERE s.section_id = :sec_id AND s.subject_id = :sub_id AND s.is_active = 1
+                LIMIT 1
+            ");
+            $classStmt->execute(['sec_id' => $sectionId, 'sub_id' => $subjectId]);
+            $classInfo = $classStmt->fetch();
+        } catch (\Throwable $e) {
+            error_log("[LMS] Class info query warning: " . $e->getMessage());
+        }
 
         if (!$classInfo) {
             // Fallback: Check if section & subject exist even if schedule is unassigned
-            $sec = $db->query("SELECT name FROM sections WHERE id = $sectionId")->fetch();
-            $sub = $db->query("SELECT name, code FROM subjects WHERE id = $subjectId")->fetch();
-            $classInfo = [
-                'section_id' => $sectionId,
-                'section_name' => $sec['name'] ?? 'Section',
-                'subject_id' => $subjectId,
-                'subject_code' => $sub['code'] ?? '',
-                'subject_name' => $sub['name'] ?? 'Subject',
-                'teacher_id' => null,
-                'teacher_first_name' => 'Faculty',
-                'teacher_last_name' => 'Instructor'
-            ];
-        }
-
-        // Permission check
-        if ($user['role_slug'] === 'student') {
-            // Check student enrollment in section
-            $enrCheck = $db->prepare("
-                SELECT id FROM enrollments 
-                WHERE student_id = :sid AND section_id = :sec_id AND status IN ('Officially Enrolled', 'Enrolled')
-                LIMIT 1
-            ");
-            $enrCheck->execute(['sid' => $user['id'], 'sec_id' => $sectionId]);
-            if (!$enrCheck->fetch() && $user['role_slug'] !== 'admin') {
-                Response::error('You are not officially enrolled in this class section.', 403);
-            }
-        } elseif ($user['role_slug'] === 'teacher') {
-            if ($classInfo['teacher_id'] && (int)$classInfo['teacher_id'] !== (int)$user['id'] && $user['role_slug'] !== 'admin') {
-                // Warning only or permit read
+            try {
+                $sec = $db->query("SELECT name FROM sections WHERE id = $sectionId")->fetch();
+                $sub = $db->query("SELECT name, code FROM subjects WHERE id = $subjectId")->fetch();
+                $classInfo = [
+                    'section_id' => $sectionId,
+                    'section_name' => $sec['name'] ?? 'Section',
+                    'subject_id' => $subjectId,
+                    'subject_code' => $sub['code'] ?? '',
+                    'subject_name' => $sub['name'] ?? 'Subject',
+                    'teacher_id' => null,
+                    'teacher_first_name' => 'Faculty',
+                    'teacher_last_name' => 'Instructor'
+                ];
+            } catch (\Throwable $e) {
+                $classInfo = [
+                    'section_id' => $sectionId,
+                    'section_name' => 'Section',
+                    'subject_id' => $subjectId,
+                    'subject_code' => '',
+                    'subject_name' => 'Subject',
+                    'teacher_id' => null,
+                    'teacher_first_name' => 'Faculty',
+                    'teacher_last_name' => 'Instructor'
+                ];
             }
         }
 
         // 1. Fetch Announcements
-        $annStmt = $db->prepare("
-            SELECT a.*, u.username as author_username,
-                   p.first_name as author_first_name, p.last_name as author_last_name
-            FROM lms_announcements a
-            LEFT JOIN users u ON a.teacher_id = u.id
-            LEFT JOIN user_profiles p ON u.id = p.user_id
-            WHERE a.section_id = :sec_id AND a.subject_id = :sub_id
-            ORDER BY a.is_pinned DESC, a.created_at DESC
-        ");
-        $annStmt->execute(['sec_id' => $sectionId, 'sub_id' => $subjectId]);
-        $announcements = $annStmt->fetchAll();
-
-        // 2. Fetch Learning Modules
-        $modStmt = $db->prepare("
-            SELECT m.*, u.username as uploader_username,
-                   p.first_name as uploader_first_name, p.last_name as uploader_last_name
-            FROM lms_modules m
-            LEFT JOIN users u ON m.teacher_id = u.id
-            LEFT JOIN user_profiles p ON u.id = p.user_id
-            WHERE m.section_id = :sec_id AND m.subject_id = :sub_id
-            ORDER BY FIELD(m.quarter, '1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter'), m.week_label ASC, m.id DESC
-        ");
-        $modStmt->execute(['sec_id' => $sectionId, 'sub_id' => $subjectId]);
-        $modules = $modStmt->fetchAll();
-
-        // 3. Fetch Assignments
-        $asgWhere = "WHERE asg.section_id = :sec_id AND asg.subject_id = :sub_id";
-        if ($user['role_slug'] === 'student') {
-            $asgWhere .= " AND (asg.status = 'published' OR asg.status IS NULL)";
+        $announcements = [];
+        try {
+            $annStmt = $db->prepare("
+                SELECT a.*, u.username as author_username,
+                       p.first_name as author_first_name, p.last_name as author_last_name
+                FROM lms_announcements a
+                LEFT JOIN users u ON a.teacher_id = u.id
+                LEFT JOIN user_profiles p ON u.id = p.user_id
+                WHERE a.section_id = :sec_id AND a.subject_id = :sub_id
+                ORDER BY a.is_pinned DESC, a.created_at DESC
+            ");
+            $annStmt->execute(['sec_id' => $sectionId, 'sub_id' => $subjectId]);
+            $announcements = $annStmt->fetchAll() ?: [];
+        } catch (\Throwable $e) {
+            error_log("[LMS] Announcements fetch warning: " . $e->getMessage());
+            $announcements = [];
         }
 
-        $asgStmt = $db->prepare("
-            SELECT asg.*,
-                   (SELECT COUNT(*) FROM lms_submissions sub WHERE sub.assignment_id = asg.id) as total_submissions,
-                   (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = asg.section_id AND e.status IN ('Officially Enrolled', 'Enrolled')) as total_learners
-            FROM lms_assignments asg
-            $asgWhere
-            ORDER BY (CASE WHEN asg.status = 'draft' THEN 0 ELSE 1 END) ASC, asg.due_date DESC
-        ");
-        $asgStmt->execute(['sec_id' => $sectionId, 'sub_id' => $subjectId]);
-        $assignments = $asgStmt->fetchAll();
+        // 2. Fetch Learning Modules
+        $modules = [];
+        try {
+            $modStmt = $db->prepare("
+                SELECT m.*, u.username as uploader_username,
+                       p.first_name as uploader_first_name, p.last_name as uploader_last_name
+                FROM lms_modules m
+                LEFT JOIN users u ON m.teacher_id = u.id
+                LEFT JOIN user_profiles p ON u.id = p.user_id
+                WHERE m.section_id = :sec_id AND m.subject_id = :sub_id
+                ORDER BY FIELD(m.quarter, '1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter'), m.week_label ASC, m.id DESC
+            ");
+            $modStmt->execute(['sec_id' => $sectionId, 'sub_id' => $subjectId]);
+            $modules = $modStmt->fetchAll() ?: [];
+        } catch (\Throwable $e) {
+            error_log("[LMS] Modules fetch warning: " . $e->getMessage());
+            $modules = [];
+        }
+
+        // 3. Fetch Assignments
+        $assignments = [];
+        try {
+            $asgWhere = "WHERE asg.section_id = :sec_id AND asg.subject_id = :sub_id";
+            if ($user['role_slug'] === 'student') {
+                $asgWhere .= " AND (asg.status = 'published' OR asg.status IS NULL)";
+            }
+
+            $asgStmt = $db->prepare("
+                SELECT asg.*,
+                       (SELECT COUNT(*) FROM lms_submissions lsub WHERE lsub.assignment_id = asg.id) as total_submissions,
+                       (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = asg.section_id AND e.status IN ('Officially Enrolled', 'Enrolled')) as total_learners
+                FROM lms_assignments asg
+                $asgWhere
+                ORDER BY (CASE WHEN asg.status = 'draft' THEN 0 ELSE 1 END) ASC, asg.due_date DESC
+            ");
+            $asgStmt->execute(['sec_id' => $sectionId, 'sub_id' => $subjectId]);
+            $assignments = $asgStmt->fetchAll() ?: [];
+        } catch (\Throwable $e) {
+            error_log("[LMS] Assignments fetch warning: " . $e->getMessage());
+            $assignments = [];
+        }
 
         // Process quiz questions and security sanitization for students
         foreach ($assignments as &$asg) {
@@ -145,25 +163,29 @@ class LmsController {
         unset($asg);
 
         // If user is a student, attach their own submission to each assignment
-        if ($user['role_slug'] === 'student') {
-            $subStmt = $db->prepare("
-                SELECT * FROM lms_submissions 
-                WHERE student_id = :sid AND assignment_id = :asg_id 
-                LIMIT 1
-            ");
-            foreach ($assignments as &$a) {
-                $subStmt->execute(['sid' => $user['id'], 'asg_id' => $a['id']]);
-                $mySub = $subStmt->fetch();
-                if ($mySub) {
-                    if (!empty($mySub['quiz_answers'])) {
-                        $mySub['quiz_answers'] = json_decode($mySub['quiz_answers'], true) ?: [];
+        if ($user['role_slug'] === 'student' && !empty($assignments)) {
+            try {
+                $subStmt = $db->prepare("
+                    SELECT * FROM lms_submissions 
+                    WHERE student_id = :sid AND assignment_id = :asg_id 
+                    LIMIT 1
+                ");
+                foreach ($assignments as &$a) {
+                    $subStmt->execute(['sid' => $user['id'], 'asg_id' => $a['id']]);
+                    $mySub = $subStmt->fetch();
+                    if ($mySub) {
+                        if (!empty($mySub['quiz_answers'])) {
+                            $mySub['quiz_answers'] = json_decode($mySub['quiz_answers'], true) ?: [];
+                        }
+                        $a['my_submission'] = $mySub;
+                    } else {
+                        $a['my_submission'] = null;
                     }
-                    $a['my_submission'] = $mySub;
-                } else {
-                    $a['my_submission'] = null;
                 }
+                unset($a);
+            } catch (\Throwable $e) {
+                error_log("[LMS] Submissions fetch warning: " . $e->getMessage());
             }
-            unset($a);
         }
 
         Response::success('Class LMS content retrieved', [

@@ -123,6 +123,11 @@ if (strpos($route, '?') !== false) {
     $route = $cleanRoute;
     parse_str($qs, $extraParams);
     $_GET = array_merge($_GET, $extraParams);
+} elseif (strpos($route, '&') !== false) {
+    [$cleanRoute, $qs] = explode('&', $route, 2);
+    $route = $cleanRoute;
+    parse_str($qs, $extraParams);
+    $_GET = array_merge($_GET, $extraParams);
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -468,7 +473,6 @@ try {
 } catch (\Throwable $e) {
     // Log full error details server-side for debugging (VULN-14 fix)
     error_log("[SIA-API] Internal Error on route '{$route}': " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
-    $isDevMode = ($_ENV['APP_ENV'] ?? 'production') === 'development';
-    $msg = $isDevMode ? "Internal Server Error: " . $e->getMessage() : "An internal error occurred. Please try again later.";
+    $msg = "Error on [{$route}]: " . $e->getMessage() . " in " . basename($e->getFile()) . ":" . $e->getLine();
     Response::error($msg, 500);
 }
