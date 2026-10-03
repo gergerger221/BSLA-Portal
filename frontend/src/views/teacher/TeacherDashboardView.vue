@@ -84,14 +84,14 @@
         <span class="text-[10px] text-slate-400">Total learners across sections</span>
       </div>
 
-      <!-- Card 4: Classroom LMS Modules -->
+      <!-- Card 4: Classroom LMS Hub -->
       <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
         <div class="flex items-center justify-between">
           <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Classroom LMS</span>
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200 font-mono">Modules</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200 font-mono">Hub</span>
         </div>
-        <strong class="text-2xl font-bold text-slate-900 font-mono mt-1 block">{{ lmsModules.length + lmsAssignments.length }}</strong>
-        <span class="text-[10px] text-slate-400">Handouts & class tasks active</span>
+        <strong class="text-2xl font-bold text-slate-900 font-mono mt-1 block">{{ teachingClasses.length }}</strong>
+        <span class="text-[10px] text-slate-400">Virtual class rosters active</span>
       </div>
     </div>
 
