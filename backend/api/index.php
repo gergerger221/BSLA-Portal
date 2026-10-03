@@ -457,6 +457,10 @@ try {
             (new \App\Controllers\AuditController())->runAudit();
             break;
 
+        case 'system/sync-remote-db':
+            require_once __DIR__ . '/../run_database_sync.php';
+            exit;
+
         default:
             Response::error("Endpoint not found: {$route}", 404);
             break;
